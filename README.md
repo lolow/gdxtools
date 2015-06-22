@@ -4,7 +4,16 @@ The gdxtools package converts data (parameter or variables) from a GDX file (pro
 
 ## Installation
 
+```R
 install.packages("gdxtools.zip",repos=NULL)
+```
+
+or
+
+```R
+library("devtools")
+install_github('lolow/gdxtools')
+```
 
 ## Usage
 
