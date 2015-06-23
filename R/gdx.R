@@ -9,7 +9,7 @@ print.gdx <- function(x, ...) {
     cat("<gdx: ", x$filename, ">\n", sep = "")
 }
 
-# register function
+#' @export
 extract <- function(x, ...) {
     UseMethod("extract", x)
 }
@@ -22,6 +22,7 @@ extract <- function(x, ...) {
 
 #' Extract parameter or variable data from the gdx file
 #'
+#' @export
 #' @param x the gdx object
 #' @param item the name of the item to extract
 #' @param field the field of the variable to be extracted. Can be 'l', 'm', 'lo'
@@ -74,6 +75,7 @@ all_items <- function(x, ...) {
 
 #' Return the list of all items
 #'
+#' @export
 #' @param x the gdx object
 #' @examples
 #'  \dontrun{
