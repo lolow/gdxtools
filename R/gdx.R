@@ -1,7 +1,3 @@
-.onAttach <- function(libname, pkgname) {
-    packageStartupMessage("gdxtools v0.1")
-}
-
 #' @export
 gdx <- function(filename, ...) {
     structure(list(filename = filename, ...), class = "gdx")
@@ -43,9 +39,9 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F) {
     # mem.all_items = memoise(all_items.gdx) allitems = mem.all_items(x)
     allitems = all_items(x)
     if (item %in% allitems[["variables"]]) {
-        res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
+        res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
     } else if (item %in% allitems[["parameters"]]) {
-        res = rgdx(x$filename, list(name = item), squeeze = F)
+        res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
     } else {
         stop()
     }
@@ -75,9 +71,19 @@ all_items <- function(x, ...) {
     UseMethod("all_items", x)
 }
 
-# Return list of items
+#' Return the list of all items
+#'
+#' @param x the gdx object
+#' @examples
+#'  \dontrun{
+#'     mygdx <- gdx('results.gdx')
+#'     all_items(mygdx)
+#'  }
+#'
 all_items.gdx <- function(x) {
-    info = gdxInfo(x$filename, dump = F, returnList = T)
-    return(list(variables = info[["variables"]], parameters = info[["parameters"]], sets = info[["sets"]],
-        equations = info[["equations"]]))
+    info = gdxrrw::gdxInfo(x$filename, dump = F, returnList = T)
+    return(list(variables = info[["variables"]],
+      parameters = info[["parameters"]],
+      sets = info[["sets"]],
+      equations = info[["equations"]]))
 }

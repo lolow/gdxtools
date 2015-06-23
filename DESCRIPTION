@@ -4,8 +4,10 @@ Title: Manipulate GDX files
 Version: 0.1
 Date: 2015-06-22
 Authors@R: person("Laurent", "Drouet", ,"ldrouet@gmail.com", role = c("aut", "cre"))
-Description: Get info on GDX files (GAMS database exchange files) and convert
-  parameters and variables data into data.frame.
+Description: Get info on GDX files (GAMS database exchange files)
+  and convert parameters and variables data into data.frame.
 License: MIT + file LICENSE
-LazyData: TRUE
-Imports: gdxrrw (>=  0.5.4)
+URL: https://github.com/lolow/gdxtools
+LazyData: FALSE
+Imports: gdxrrw  (>=  0.5)
+Suggests: testthat
