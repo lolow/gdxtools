@@ -1,4 +1,9 @@
+
+#' GDX file
+#'
 #' @export
+#'
+#' @param filename filename of the gdx file
 gdx <- function(filename, ...) {
   if(!file.exists(filename)) warning(paste(filename,"does not exist!"))
   structure(list(filename = filename, ...), class = "gdx")
@@ -9,11 +14,15 @@ print.gdx <- function(x, ...) {
     cat("<gdx: ", x$filename, ">\n", sep = "")
 }
 
+#' Extract information
+#'
 #' @export
 extract <- function(x, ...) {
     UseMethod("extract", x)
 }
 
+#' Wrap extract.gdx
+#'
 #' @export
 `[.gdx` <- function(x, ...) {
     extract.gdx(x, ...)
@@ -37,37 +46,42 @@ extract <- function(x, ...) {
 #'     travel_cost <- extract(mygdx,"travel_cost")
 #'  }
 #'
-extract.gdx <- function(x, item, field = "l", addgdxname = F) {
-    # mem.all_items = memoise(all_items.gdx) allitems = mem.all_items(x)
-    allitems = all_items(x)
-    if (item %in% allitems[["variables"]]) {
-        res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    } else if (item %in% allitems[["parameters"]]) {
-        res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
+  # mem.all_items = memoise(all_items.gdx) allitems = mem.all_items(x)
+  allitems = all_items(x)
+  if (item %in% c(allitems[["variables"]],allitems[["equations"]])) {
+    res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
+  } else {
+    res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+  }
+  if (res$dim == 0) {
+    return(data.frame(res$val[, res$dim + 1]))
+  }
+  ldf = list()
+  for (i in 1:res$dim) {
+    if (res$domains[i] == "*") {
+      colname = paste("V", i, sep = "")
     } else {
-        stop()
+      colname = res$domains[i]
     }
-    df = data.frame(value = res$val[, res$dim + 1])
-    if (res$dim == 0) {
-        return(df)
-    }
-    for (i in 1:res$dim) {
-        if (res$domains[i] == "*") {
-            colname = paste("V", i, sep = "")
-        } else {
-            colname = res$domains[i]
-        }
-        df[[colname]] = factor(res$val[, i])
-        labidx = as.numeric(levels(df[[colname]]))
-        levels(df[[colname]]) = res$uels[[i]][labidx]
-    }
-    # get rid of annoying factors
-    df[] <- lapply(df, as.character)
-    if (addgdxname)
-        df$gdx = x$filename
-    df
+    l = factor(res$val[, i])
+    labidx = as.numeric(levels(l))
+    levels(l) = res$uels[[i]][labidx]
+    l = list(as.character(l))
+    names(l) = colname
+    ldf = c(ldf,l)
+  }
+  df = data.frame(ldf,stringsAsFactors=F)
+  if(!res$type %in% c("set")){
+    df$value = res$val[, res$dim + 1]
+  }
+  if (addgdxname)
+      df$gdx = x$filename
+  return(df)
 }
 
+#' Return the list of all items
+#'
 #' @export
 all_items <- function(x, ...) {
     UseMethod("all_items", x)
@@ -83,7 +97,7 @@ all_items <- function(x, ...) {
 #'     all_items(mygdx)
 #'  }
 #'
-all_items.gdx <- function(x) {
+all_items.gdx <- function(x, ...) {
     info = gdxrrw::gdxInfo(x$filename, dump = F, returnList = T)
     return(list(variables = info[["variables"]],
       parameters = info[["parameters"]],

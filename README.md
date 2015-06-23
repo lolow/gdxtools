@@ -29,7 +29,10 @@ all_items(mygdx)
 # create a data.frame from a parameter
 travel_cost <- mygdx["travel_cost"]
 
-# create a data.frame from the marginal value of a variable
-m_travel_time <- mygdx["travel_time", field="m"]
+# create a data.frame from the lower bound of a variable
+lo_travel_time <- mygdx["travel_time", field="lo"]
+
+# create a data.frame from the marginal value of an equation
+m_time_constraint <- mygdx["time_constraint", field="m"]
 
 ```

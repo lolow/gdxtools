@@ -4,7 +4,7 @@
 \alias{all_items.gdx}
 \title{Return the list of all items}
 \usage{
-\method{all_items}{gdx}(x)
+\method{all_items}{gdx}(x, ...)
 }
 \arguments{
 \item{x}{the gdx object}

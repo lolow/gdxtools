@@ -4,7 +4,7 @@
 \alias{extract.gdx}
 \title{Extract parameter or variable data from the gdx file}
 \usage{
-\method{extract}{gdx}(x, item, field = "l", addgdxname = F)
+\method{extract}{gdx}(x, item, field = "l", addgdxname = F, ...)
 }
 \arguments{
 \item{x}{the gdx object}
