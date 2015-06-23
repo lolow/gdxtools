@@ -1,6 +1,7 @@
 #' @export
 gdx <- function(filename, ...) {
-    structure(list(filename = filename, ...), class = "gdx")
+  if(!file.exists(filename)) warning(paste(filename,"does not exist!"))
+  structure(list(filename = filename, ...), class = "gdx")
 }
 
 #' @export
