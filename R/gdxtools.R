@@ -60,7 +60,7 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
   fgms = file(gms, "w")
   # collect and write sets
   allsets = unique(unlist(lapply(params, names)))
-  allsets = subset(allsets, !allsets %in% c('*'))
+  allsets = subset(allsets, !allsets %in% c('*','value'))
   for(i in seq_along(allsets)){
     s = allsets[i]
     writeLines(paste("set", s, "/"), fgms)
