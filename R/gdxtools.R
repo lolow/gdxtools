@@ -48,7 +48,7 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
 #'     write_gdx("test.gdx",list(param1=param1,param2=param2))
 #'  }
 #'
-write_gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
+write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
   # Create a temporary gams file
   if(usetempdir){
     gms = tempfile(pattern = "wgdx", fileext = ".gms")
