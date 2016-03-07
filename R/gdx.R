@@ -55,10 +55,10 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
     res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
   }
   if (res$dim == 0) {
-    return(data.frame(res$val[, res$dim + 1]))
+    return(data.frame(value=res$val[,res$dim+1]))
   }
   ldf = list()
-  for (i in 1:res$dim) {
+  for (i in seq_along(res$dim)) {
     if (res$domains[i] == "*") {
       colname = paste("V", i, sep = "")
     } else {
@@ -75,8 +75,9 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
   if(!res$type %in% c("set")){
     df$value = res$val[, res$dim + 1]
   }
-  if (addgdxname)
-      df$gdx = x$filename
+  if (addgdxname){
+    df$gdx = x$filename
+  }
   return(df)
 }
 

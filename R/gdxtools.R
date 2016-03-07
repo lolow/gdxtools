@@ -84,7 +84,7 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
     }
   }
   # save into a gdx
-  writeLines(paste0('execute_unload "',filename,'"\n',paste(names(params),collapse="\n"),"\n;"), fgms)
+  writeLines(paste0('execute_unload "',file,'"\n',paste(names(params),collapse="\n"),"\n;"), fgms)
   close(fgms)
   res = gams(paste0(gms," output=",lst))
   if(res!=0) stop(paste("write gdx failed -",gms))
