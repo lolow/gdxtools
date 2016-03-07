@@ -5,7 +5,7 @@ The gdxtools package converts data (parameter or variables) from a GDX file (pro
 ## Installation
 
 ```R
-install.packages("gdxtools.zip",repos=NULL)
+install.packages("gdxtools_0.3.zip",repos=NULL)
 ```
 
 or
@@ -34,5 +34,15 @@ lo_travel_time <- mygdx["travel_time", field="lo"]
 
 # create a data.frame from the marginal value of an equation
 m_time_constraint <- mygdx["time_constraint", field="m"]
+
+# Extract a list of items from many GDX
+myfiles = c("test1.gdx","test2.gdx")
+allparam = batch_extract("myparam",files=myfiles)
+
+# write gdx
+param1 = data.frame(x=c('1','2'),value=1:10)
+param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
+write.gdx("test.gdx",list(param1=param1,param2=param2))
+
 
 ```

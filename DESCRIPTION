@@ -1,7 +1,7 @@
 Package: gdxtools
 Type: Package
 Title: Manipulate GDX files
-Version: 0.2
+Version: 0.3
 Date: 2015-06-22
 Authors@R: person("Laurent", "Drouet", ,"ldrouet@gmail.com", role = c("aut", "cre"))
 Description: Get info on GDX files (GAMS database exchange files)

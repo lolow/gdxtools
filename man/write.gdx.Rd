@@ -22,7 +22,7 @@ Write a list of parameters in a gdx
  \dontrun{
     param1 = data.frame(x=c('1','2'),value=1:10)
     param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-    write_gdx("test.gdx",list(param1=param1,param2=param2))
+    write.gdx("test.gdx",list(param1=param1,param2=param2))
  }
 
 }
