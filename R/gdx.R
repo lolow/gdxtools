@@ -58,7 +58,7 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
     return(data.frame(value=res$val[,res$dim+1]))
   }
   ldf = list()
-  for (i in seq_along(res$dim)) {
+  for (i in 1:res$dim) {
     if (res$domains[i] == "*") {
       colname = paste("V", i, sep = "")
     } else {
