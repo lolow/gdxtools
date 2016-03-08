@@ -1,12 +1,12 @@
 Package: gdxtools
 Type: Package
-Title: Manipulate GDX files
+Title: Manipulate GDX Files
 Version: 0.3.0
 Date: 2016-03-07
 Authors@R: person("Laurent", "Drouet", ,"ldrouet@gmail.com", role = c("aut", "cre"))
 Description: Get info on GDX files (GAMS database exchange files)
     and convert parameters and variables data into data.frame.
-License: EPL + file LICENSE
+License: EPL
 URL: https://github.com/lolow/gdxtools
 LazyData: FALSE
 Imports:
@@ -14,3 +14,5 @@ Imports:
 Suggests:
     testthat
 RoxygenNote: 5.0.1
+LinkingTo: Rcpp
+Imports: Rcpp

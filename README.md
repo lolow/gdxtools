@@ -4,11 +4,13 @@ The gdxtools package converts data (parameter or variables) from a GDX file (pro
 
 ## Installation
 
+Download the latest release zip here [https://github.com/lolow/gdxtools/releases/latest]
+
 ```R
-install.packages("gdxtools_0.3.zip",repos=NULL)
+install.packages("gdxtools_0.3.0.zip",repos=NULL)
 ```
 
-or
+or install the development version
 
 ```R
 library("devtools")
