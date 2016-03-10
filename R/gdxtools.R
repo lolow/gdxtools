@@ -72,7 +72,7 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
   # Write parameters
   for(i in seq_along(params)){
     p = params[[i]]
-    text = ifelse("gams" %in% names(attributes(tab)),attributes(tab)$gams,"")
+    text = ifelse("gams" %in% names(attributes(p)),attributes(p)$gams,"")
     if(length(colnames(p))==1){
       writeLines(paste("scalar", names(params)[i], " '", text, "' /", as.numeric(p[1]), "/;"), fgms)
     } else {
