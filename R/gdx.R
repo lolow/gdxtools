@@ -68,7 +68,10 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
   } else if(item %in% x$parameters$name){
     res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
     text = x$parameters$text[item==x$parameters$name]
-  } else {
+  } else if(item %in% x$sets$name){
+    res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+    text = x$sets$text[item==x$sets$name]
+  }else {
     warning("item not found")
     return(NULL)
   }
