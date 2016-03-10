@@ -5,13 +5,25 @@
 #'
 #' @param filename filename of the gdx file
 gdx <- function(filename, ...) {
-  if(!file.exists(filename)) warning(paste(filename,"does not exist!"))
-  structure(list(filename = filename, ...), class = "gdx")
+  if(file.exists(filename)){
+    info = gdxrrw::gdxInfo(filename, dump = F, returnDF = T)
+    return(structure(list(filename = filename,
+                          sets = info$sets,
+                          parameters = info$parameters,
+                          variables = info$variables,
+                          equations = info$equations,
+                          aliases = info$aliases,
+                          symCount = info$symCount,
+                          ...), class = "gdx"))
+  }else{
+    warning(paste(filename,"does not exist!"))
+    return(structure(list(filename = filename, ...), class = "gdx"))
+  }
 }
 
 #' @export
 print.gdx <- function(x, ...) {
-    cat("<gdx: ", x$filename, ">\n", sep = "")
+    cat("<gdx: ", x$filename, ", ", x$symCount," symbol",ifelse(x$symCount>1,"s",""),">\n", sep = "")
 }
 
 #' Extract information
@@ -47,37 +59,45 @@ extract <- function(x, ...) {
 #'  }
 #'
 extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
-  # mem.all_items = memoise(all_items.gdx) allitems = mem.all_items(x)
-  allitems = all_items(x)
-  if (item %in% c(allitems[["variables"]],allitems[["equations"]])) {
+  if(item %in% x$variables$name){
     res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
-  } else {
+    text = x$variables$text[item==x$variables$name]
+  } else if(item %in% x$equations$name){
+    res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
+    text = x$equations$text[item==x$equations$name]
+  } else if(item %in% x$parameters$name){
     res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+    text = x$parameters$text[item==x$parameters$name]
+  } else {
+    warning("item not found")
+    return(NULL)
   }
   if (res$dim == 0) {
-    return(data.frame(value=res$val[,res$dim+1]))
-  }
-  ldf = list()
-  for (i in 1:res$dim) {
-    if (res$domains[i] == "*") {
-      colname = paste("V", i, sep = "")
-    } else {
-      colname = res$domains[i]
+    df = data.frame(value=res$val[,res$dim+1])
+  } else {
+    ldf = list()
+    for (i in 1:res$dim) {
+      if (res$domains[i] == "*") {
+        colname = paste("V", i, sep = "")
+      } else {
+        colname = res$domains[i]
+      }
+      l = factor(res$val[, i])
+      labidx = as.numeric(levels(l))
+      levels(l) = res$uels[[i]][labidx]
+      l = list(as.character(l))
+      names(l) = colname
+      ldf = c(ldf,l)
     }
-    l = factor(res$val[, i])
-    labidx = as.numeric(levels(l))
-    levels(l) = res$uels[[i]][labidx]
-    l = list(as.character(l))
-    names(l) = colname
-    ldf = c(ldf,l)
-  }
-  df = data.frame(ldf,stringsAsFactors=F)
-  if(!res$type %in% c("set")){
-    df$value = res$val[, res$dim + 1]
+    df = data.frame(ldf,stringsAsFactors=F)
+    if(!res$type %in% c("set")){
+      df$value = res$val[, res$dim + 1]
+    }
   }
   if (addgdxname){
     df$gdx = x$filename
   }
+  attributes(df) = c(attributes(df),gams=text)
   return(df)
 }
 

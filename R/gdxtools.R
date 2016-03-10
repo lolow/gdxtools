@@ -72,12 +72,13 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
   # Write parameters
   for(i in seq_along(params)){
     p = params[[i]]
+    text = ifelse("gams" %in% names(attributes(tab)),attributes(tab)$gams,"")
     if(length(colnames(p))==1){
-      writeLines(paste("scalar", names(params)[i], "/", as.numeric(p[1]), "/;"), fgms)
+      writeLines(paste("scalar", names(params)[i], " '", text, "' /", as.numeric(p[1]), "/;"), fgms)
     } else {
       indices = subset(colnames(p), colnames(p) != "value")
       writeLines(paste0("parameter ", names(params)[i],
-                        "(", paste(indices, collapse=","), ") /"), fgms)
+                        "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
       concatenate <- function(row, len) paste(paste(row[1:len],collapse="."),row[len+1])
       writeLines(apply(p,1,concatenate, len=length(indices)), fgms)
       writeLines("/;", fgms)

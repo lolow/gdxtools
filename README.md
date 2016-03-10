@@ -23,28 +23,35 @@ install_github('lolow/gdxtools')
 library(gdxtools)
 
 # define a gdx
-mygdx <- gdx('results.gdx')
+> mygdx <- gdx('results.gdx')
+
+# get information on a gdx
+> print(mygdx)
+<results.gdx, 8 symbols>
+> print(mygdx$parameters$name)
+[1] param1 param2
 
 # get information on all items in the gdx
-all_items(mygdx)
+> all_items(mygdx)
 
 # create a data.frame from a parameter
-travel_cost <- mygdx["travel_cost"]
+> travel_cost <- mygdx["travel_cost"]
 
 # create a data.frame from the lower bound of a variable
-lo_travel_time <- mygdx["travel_time", field="lo"]
+> lo_travel_time <- mygdx["travel_time", field="lo"]
 
 # create a data.frame from the marginal value of an equation
-m_time_constraint <- mygdx["time_constraint", field="m"]
+> m_time_constraint <- mygdx["time_constraint", field="m"]
 
 # Extract a list of items from many GDX
-myfiles = c("test1.gdx","test2.gdx")
-allparam = batch_extract("myparam",files=myfiles)
+> myfiles = c("test1.gdx","test2.gdx")
+> allparam = batch_extract("myparam",files=myfiles)
 
 # write gdx
-param1 = data.frame(x=c('1','2'),value=1:10)
-param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-write.gdx("test.gdx",list(param1=param1,param2=param2))
+> param1 = data.frame(x=c('1','2'),value=1:10)
+> attributes(param1) = c(attributes(param1), gams="definition of parameter 1")
+> param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
+> write.gdx("test.gdx",list(param1=param1,param2=param2))
 
 
 ```
