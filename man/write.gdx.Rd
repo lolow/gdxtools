@@ -4,7 +4,8 @@
 \alias{write.gdx}
 \title{Write a list of parameters in a gdx}
 \usage{
-write.gdx(file, params = list(), removeLST = T, usetempdir = T)
+write.gdx(file, params = list(), removeLST = T, usetempdir = T,
+  digits = 16)
 }
 \arguments{
 \item{file}{the filename of the gdx to save}
@@ -14,6 +15,8 @@ write.gdx(file, params = list(), removeLST = T, usetempdir = T)
 \item{removeLST}{remove temporary lst file}
 
 \item{usetempdir}{uses system temp dir for the temporary files, otherwise use local file "tmp.gms"}
+
+\item{digit}{number of digits to use}
 }
 \description{
 Write a list of parameters in a gdx

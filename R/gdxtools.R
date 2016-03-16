@@ -79,9 +79,10 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T, digits=16)
       writeLines(paste("scalar", names(params)[i], " '", text, "' /", format(as.numeric(p[1]),digits=digits), "/;"), fgms)
     } else {
       indices = subset(colnames(p), colnames(p) != "value")
+      p[[length(indices)+1]] = format(p[[length(indices)+1]],digits=digits)
       writeLines(paste0("parameter ", names(params)[i],
                         "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate <- function(row, len) paste(paste(row[1:len],collapse="."),format(row[len+1],digits=digits))
+      concatenate <- function(row, len) paste(paste(row[1:len],collapse="."), row[len+1])
       writeLines(apply(p,1,concatenate, len=length(indices)), fgms)
       writeLines("/;", fgms)
     }
