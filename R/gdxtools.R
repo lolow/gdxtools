@@ -41,6 +41,7 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
 #' @param params named list of parameters
 #' @param usetempdir uses system temp dir for the temporary files, otherwise use local file "tmp.gms"
 #' @param removeLST remove temporary lst file
+#' @param digit number of digits to use
 #' @examples
 #'  \dontrun{
 #'     param1 = data.frame(x=c('1','2'),value=1:10)
@@ -48,7 +49,7 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
 #'     write.gdx("test.gdx",list(param1=param1,param2=param2))
 #'  }
 #'
-write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
+write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T, digits=16){
   # Create a temporary gams file
   if(usetempdir){
     gms = tempfile(pattern = "wgdx", fileext = ".gms")
@@ -75,12 +76,12 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
     p = params[[i]]
     text = ifelse("gams" %in% names(attributes(p)),attributes(p)$gams,"")
     if(length(colnames(p))==1){
-      writeLines(paste("scalar", names(params)[i], " '", text, "' /", as.numeric(p[1]), "/;"), fgms)
+      writeLines(paste("scalar", names(params)[i], " '", text, "' /", format(as.numeric(p[1]),digits=digits), "/;"), fgms)
     } else {
       indices = subset(colnames(p), colnames(p) != "value")
       writeLines(paste0("parameter ", names(params)[i],
                         "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate <- function(row, len) paste(paste(row[1:len],collapse="."),row[len+1])
+      concatenate <- function(row, len) paste(paste(row[1:len],collapse="."),format(row[len+1],digits=digits))
       writeLines(apply(p,1,concatenate, len=length(indices)), fgms)
       writeLines("/;", fgms)
     }

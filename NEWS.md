@@ -1,3 +1,7 @@
+# gdxtools 0.3.3
+
+* add digits in write.gdx to control the precision
+
 # gdxtools 0.2
 
 * Change license to EPL to comply with gdxrrw
