@@ -58,6 +58,7 @@ write.gdx <- function(file, params=list(), removeLST=T, usetempdir=T){
     lst = "tmp.lst"
   }
   fgms = file(gms, "w")
+  writeLines("$offdigit", fgms)
   # collect and write sets
   allsets = unique(unlist(lapply(params, names)))
   allsets = subset(allsets, !allsets %in% c('*','value'))
