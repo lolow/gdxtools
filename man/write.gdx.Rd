@@ -4,17 +4,26 @@
 \alias{write.gdx}
 \title{Write a list of parameters in a gdx}
 \usage{
-write.gdx(file, params = list(), removeLST = T, usetempdir = T,
-  digits = 16)
+write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
+  vars_up = list(), removeLST = T, usetempdir = T, digits = 16,
+  compress = T)
 }
 \arguments{
 \item{file}{the filename of the gdx to save}
 
 \item{params}{named list of parameters}
 
+\item{vars_l}{named list of variable levels}
+
+\item{vars_lo}{named list of variable lower bounds}
+
+\item{vars_up}{named list of variable upper bounds}
+
 \item{removeLST}{remove temporary lst file}
 
 \item{usetempdir}{uses system temp dir for the temporary files, otherwise use local file "tmp.gms"}
+
+\item{compress}{compress GDX}
 
 \item{digit}{number of digits to use}
 }

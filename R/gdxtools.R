@@ -39,9 +39,13 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
 #' @export
 #' @param file the filename of the gdx to save
 #' @param params named list of parameters
+#' @param vars_l named list of variable levels
+#' @param vars_lo named list of variable lower bounds
+#' @param vars_up named list of variable upper bounds
 #' @param usetempdir uses system temp dir for the temporary files, otherwise use local file "tmp.gms"
 #' @param removeLST remove temporary lst file
 #' @param digit number of digits to use
+#' @param compress compress GDX
 #' @examples
 #'  \dontrun{
 #'     param1 = data.frame(x=c('1','2'),value=1:10)
@@ -53,7 +57,7 @@ write.gdx <- function(file, params=list(),
                       vars_l=list(),
                       vars_lo=list(),
                       vars_up=list(),
-                      removeLST=T, usetempdir=T, digits=16){
+                      removeLST=T, usetempdir=T, digits=16, compress=T){
   # Create a temporary gams file
   if(usetempdir){
     gms = tempfile(pattern = "wgdx", fileext = ".gms")
@@ -160,7 +164,7 @@ write.gdx <- function(file, params=list(),
                     "\n;"), fgms)
   writeLines("$offempty", fgms)
   close(fgms)
-  res = gams(paste0(gms," output=",lst))
+  res = gams(paste0(gms,ifelse(compress," gdxcompress=1","")," output=",lst))
   if(res!=0) stop(paste("write gdx failed -",gms))
   if(removeLST) file.remove(lst)
   return(res)
