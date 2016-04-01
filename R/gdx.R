@@ -59,18 +59,20 @@ extract <- function(x, ...) {
 #'  }
 #'
 extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
+  text = ""
   if(item %in% x$variables$name){
     res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    text = x$variables$text[item==x$variables$name]
+    #TODO text is not existing
+    #if("text" %in% colnames(x$variables)) text = x$variables$text[item==x$variables$name]
   } else if(item %in% x$equations$name){
     res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    text = x$equations$text[item==x$equations$name]
+    if("text" %in% colnames(x$equations)) text = x$equations$text[item==x$equations$name]
   } else if(item %in% x$parameters$name){
     res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
-    text = x$parameters$text[item==x$parameters$name]
+    if("text" %in% colnames(x$parameters)) text = x$parameters$text[item==x$parameters$name]
   } else if(item %in% x$sets$name){
     res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
-    text = x$sets$text[item==x$sets$name]
+    if("text" %in% colnames(x$sets)) text = x$sets$text[item==x$sets$name]
   } else {
     warning("item not found")
     return(NULL)

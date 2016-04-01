@@ -1,3 +1,7 @@
+# gdxtools 0.3.4
+
+* add variables in write.gdx (manage .l, .lo, .up)
+
 # gdxtools 0.3.3
 
 * add digits in write.gdx to control the precision

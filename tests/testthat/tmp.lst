@@ -1,0 +1,126 @@
+GAMS 24.5.4  r54492 Released Oct 15, 2015 LEX-LEG x86 64bit/Linux                                                                                                                                                                      04/01/16 09:54:26 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   3  set r /
+   4  iron
+   5  nickel
+   6  /;
+   7  set p /
+   8  nuts
+   9  bolts
+  10  washers
+  11  /;
+  12  set t /
+  13  1
+  14  2
+  15  3
+  16  4
+  17  /;
+  18  set tl /
+  19  1
+  20  2
+  21  3
+  22  4
+  23  5
+  24  /;
+  25  parameter b(r)  'initial stock' /
+  26  iron 35.80
+  27  nickel  7.32
+  28  /;
+  29  parameter c(p,t)  'profit' /
+  30  nuts.1 1.73
+  31  nuts.2 1.80
+  32  nuts.3 1.60
+  33  nuts.4 2.20
+  34  bolts.1 1.82
+  35  bolts.2 1.90
+  36  bolts.3 1.70
+  37  bolts.4 0.95
+  38  washers.1 1.05
+  39  washers.2 1.10
+  40  washers.3 0.95
+  41  washers.4 1.33
+  42  /;
+  43  parameter d(r)  'storage cost' /
+  44  iron 0.030
+  45  nickel 0.025
+  46  /;
+  47  variable x(p,tl)  '' ;
+  48  variable s(r,tl)  '' ;
+  49  variable profit '' ;
+  50  x.l('bolts','2')=43.0044444444444522;
+  51  x.l('washers','4')= 0.1155555555555533;
+  52  s.l('iron','1')=35.799999999999997158;
+  53  s.l('iron','2')=35.799999999999997158;
+  54  s.l('iron','3')= 0.106311111111109080;
+  55  s.l('iron','4')= 0.106311111111109080;
+GAMS 24.5.4  r54492 Released Oct 15, 2015 LEX-LEG x86 64bit/Linux                                                                                                                                                                      04/01/16 09:54:26 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+  56  s.l('nickel','1')= 7.320000000000000284;
+  57  s.l('nickel','2')= 7.320000000000000284;
+  58  s.l('nickel','3')= 0.009244444444442834;
+  59  s.l('nickel','4')= 0.009244444444442834;
+  60  profit.l = 79.34129244444443;
+  61  x.lo('nuts','1')=0;
+  62  x.lo('nuts','2')=0;
+  63  x.lo('nuts','3')=0;
+  64  x.lo('nuts','4')=0;
+  65  x.lo('bolts','1')=0;
+  66  x.lo('bolts','2')=0;
+  67  x.lo('bolts','3')=0;
+  68  x.lo('bolts','4')=0;
+  69  x.lo('washers','1')=0;
+  70  x.lo('washers','2')=0;
+  71  x.lo('washers','3')=0;
+  72  x.lo('washers','4')=0;
+  73  s.lo('iron','1')=0;
+  74  s.lo('iron','2')=0;
+  75  s.lo('iron','3')=0;
+  76  s.lo('iron','4')=0;
+  77  s.lo('iron','5')=0;
+  78  s.lo('nickel','1')=0;
+  79  s.lo('nickel','2')=0;
+  80  s.lo('nickel','3')=0;
+  81  s.lo('nickel','4')=0;
+  82  s.lo('nickel','5')=0;
+  83  s.up('iron','1')=35.80;
+  84  s.up('nickel','1')= 7.32;
+  85  execute_unload "out_var.gdx"
+  86  b
+  87  c
+  88  d
+  89  x
+  90  s
+  91  profit
+  92  x
+  93  s
+  94  profit
+  95  x
+  96  s
+  97  profit
+  98  ;
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  24.5.4 r54492 LEX-LEG
+GAMS 24.5.4  r54492 Released Oct 15, 2015 LEX-LEG x86 64bit/Linux                                                                                                                                                                      04/01/16 09:54:26 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+EXECUTION TIME       =        0.001 SECONDS      4 MB  24.5.4 r54492 LEX-LEG
+
+
+USER: Complesso Ecotekne                             S151008:1039AO-LNX
+      Cmcc Scarl                                                 DC8354
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /home/lolow/Seafile/R/gdxtools/tests/testthat/tmp.gms
+Output     /home/lolow/Seafile/R/gdxtools/tests/testthat/tmp.lst
