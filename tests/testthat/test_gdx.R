@@ -52,8 +52,7 @@ vars_upper = list(x=g["x",field="up"],s=g["s","up"],profit=g["profit","up"])
 write.gdx("out_var.gdx",
           params=params, vars_l=vars,
           vars_lo = vars_lower,
-          vars_up = vars_upper,
-          removeLST = F, usetempdir = F)
+          vars_up = vars_upper)
 gv = gdx('out_var.gdx')
 
 test_that("write_gdx", {
@@ -75,5 +74,5 @@ test_that("write_gdx", {
 
 })
 
-#file.remove("out_param.gdx")
-#file.remove("out_var.gdx")
+file.remove("out_param.gdx")
+file.remove("out_var.gdx")
