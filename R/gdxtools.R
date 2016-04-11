@@ -25,7 +25,7 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
   }
   lall = list()
   for(item in items){
-    tt = lapply(gdxlist,extract,item,addgdx=T)
+    tt = lapply(gdxs,extract,item,addgdx=T)
     tt = do.call("rbind",tt)
     tt = list(tt)
     names(tt) <- item
