@@ -100,7 +100,7 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
     }
   }
   if (addgdxname){
-    df$gdx = ifelse(is.null(nrow(df)),character(),x$filename)
+    df$gdx = ifelse(nrow(df)==0,character(),x$filename)
   }
   attributes(df) = c(attributes(df),gams=text)
   return(df)
