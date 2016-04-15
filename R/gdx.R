@@ -49,7 +49,7 @@ extract <- function(x, ...) {
 #' @param field the field of the variable to be extracted. Can be 'l', 'm', 'lo'
 #'   'up', respectively for level, marginal, lower bound, upper bound.
 #'   Defaults to level.
-#' @param addgdxname if \code{TRUE}, the data.frame will get an extra column
+#' @param addgdx if \code{TRUE}, the data.frame will get an extra column
 #'   with the filename of the gdx.
 #' @examples
 #'  \dontrun{
@@ -58,7 +58,7 @@ extract <- function(x, ...) {
 #'     travel_cost <- extract(mygdx,"travel_cost")
 #'  }
 #'
-extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
+extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
   text = ""
   if(item %in% x$variables$name){
     res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
@@ -99,8 +99,12 @@ extract.gdx <- function(x, item, field = "l", addgdxname = F, ...) {
       df$value = res$val[, res$dim + 1]
     }
   }
-  if (addgdxname){
-    df$gdx = ifelse(nrow(df)==0,character(),x$filename)
+  if (addgdx){
+    if(nrow(df)==0){
+      df$gdx = character()
+    } else {
+      df$gdx = x$filename
+    }
   }
   attributes(df) = c(attributes(df),gams=text)
   return(df)

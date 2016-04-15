@@ -4,7 +4,7 @@
 \alias{extract.gdx}
 \title{Extract parameter or variable data from the gdx file}
 \usage{
-\method{extract}{gdx}(x, item, field = "l", addgdxname = F, ...)
+\method{extract}{gdx}(x, item, field = "l", addgdx = F, ...)
 }
 \arguments{
 \item{x}{the gdx object}
@@ -15,7 +15,7 @@
 'up', respectively for level, marginal, lower bound, upper bound.
 Defaults to level.}
 
-\item{addgdxname}{if \code{TRUE}, the data.frame will get an extra column
+\item{addgdx}{if \code{TRUE}, the data.frame will get an extra column
 with the filename of the gdx.}
 }
 \description{
