@@ -17,6 +17,8 @@ library("devtools")
 install_github('lolow/gdxtools')
 ```
 
+An interesting script can be used to load (and install if necessary) R packages, along with a function to load and install on the fly the gdxtools and its dependencies in a function __require_gdxtools__ ([see get_libraries.R](https://gist.github.com/lolow/07992971b81a156ba1f0db1b2dba9dc2))
+
 ## Usage
 
 ```R
