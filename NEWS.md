@@ -1,6 +1,9 @@
 # gdxtools 0.3.5
 
 * speed up in extract gdx
+* gdx compression by default
+* add some tests
+* handle empty parameter
 
 # gdxtools 0.3.4
 
