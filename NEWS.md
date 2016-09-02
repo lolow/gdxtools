@@ -1,6 +1,10 @@
+# gdxtools 0.3.5
+
+* speed up in extract gdx
+
 # gdxtools 0.3.4
 
-* add variables in write.gdx (manage .l, .lo, .up)
+* add variables in write.gdx (deal with .l, .lo, .up)
 
 # gdxtools 0.3.3
 

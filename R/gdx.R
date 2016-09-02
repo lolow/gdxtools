@@ -87,10 +87,7 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
       } else {
         colname = res$domains[i]
       }
-      l = factor(res$val[, i])
-      labidx = as.numeric(levels(l))
-      levels(l) = res$uels[[i]][labidx]
-      l = list(as.character(l))
+      l = list(res$uels[[i]][res$val[, i]])
       names(l) = colname
       ldf = c(ldf,l)
     }
