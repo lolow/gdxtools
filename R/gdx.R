@@ -1,8 +1,6 @@
-
 #' GDX file
 #'
 #' @export
-#'
 #' @param filename filename of the gdx file
 gdx <- function(filename, ...) {
   if(file.exists(filename)){

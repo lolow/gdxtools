@@ -2,15 +2,36 @@
 #'
 #' @name gdxtools
 #' @docType package
-#' @import gdxrrw
 #'
 NULL
 
 .onAttach <- function(libname, pkgname) {
   if (!interactive()) return()
   packageStartupMessage(paste("gdxtools",utils::packageVersion("gdxtools")))
-  # try to specify the gams installation
-  igdx(dirname(Sys.which("gams")))
+  if(Sys.info()[['sysname']]=='Windows'){
+    gamsname = 'gams.exe'
+  } else {
+    gamsname = 'gams'
+  }
+  # try to specify the gams installation from PATH
+  .res = igdx('',TRUE,TRUE)
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    .res = igdx(dirname(Sys.which("gams.exe")),TRUE,TRUE)
+  }
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    if(Sys.info()[['sysname']]=='Windows'){
+      #try to load the latest version of GAMS
+      guess_gams_path = rev(sort(Sys.glob("C:\\GAMS\\win**\\**")))
+      if(length(guess_gams_path)>0){
+        .res=igdx(guess_gams_path[1],TRUE,TRUE)
+      }
+    }
+  }
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    packageStartupMessage('Please specify the GAMS directory with the function "igdx"')
+  } else {
+    packageStartupMessage(paste('GDX library load path:',.res))
+  }
 }
 
 #' Extract a list of items from many GDX
