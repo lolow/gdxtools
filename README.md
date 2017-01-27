@@ -24,6 +24,9 @@ An interesting script can be used to load (and install if necessary) R packages,
 ```R
 library(gdxtools)
 
+# If necessary, tell where is located GAMS.
+igdx(dirname(Sys.which('gams'))) 
+
 # define a gdx
 > mygdx <- gdx('results.gdx')
 
