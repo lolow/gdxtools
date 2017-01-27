@@ -29,4 +29,7 @@ Extract parameter or variable data from the gdx file
  }
 
 }
+\author{
+Laurent Drouet
+}
 

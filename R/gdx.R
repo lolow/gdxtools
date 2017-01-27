@@ -1,7 +1,13 @@
 #' GDX file
 #'
-#' @export
 #' @param filename filename of the gdx file
+#' @author Laurent Drouet
+#' @examples
+#'
+#'   \dontrun{
+#'     mygdx <- gdx('results.gdx')
+#'   }
+#' @export
 gdx <- function(filename, ...) {
   if(file.exists(filename)){
     info = gdxrrw::gdxInfo(filename, dump = F, returnDF = T)
@@ -24,15 +30,22 @@ print.gdx <- function(x, ...) {
     cat("<gdx: ", x$filename, ", ", x$symCount," symbol",ifelse(x$symCount>1,"s",""),">\n", sep = "")
 }
 
-#' Extract information
+#' Extract data from a gdx
 #'
 #' @export
 extract <- function(x, ...) {
     UseMethod("extract", x)
 }
 
-#' Wrap extract.gdx
+#' Extract data from a gdx
 #'
+#' @author Laurent Drouet
+#' @examples
+#'
+#'   \dontrun{
+#'     mygdx <- gdx('results.gdx')
+#'     travel_cost <- mygdx["travel_cost"]
+#'   }
 #' @export
 `[.gdx` <- function(x, ...) {
     extract.gdx(x, ...)
@@ -42,6 +55,7 @@ extract <- function(x, ...) {
 #' Extract parameter or variable data from the gdx file
 #'
 #' @export
+#' @author Laurent Drouet
 #' @param x the gdx object
 #' @param item the name of the item to extract
 #' @param field the field of the variable to be extracted. Can be 'l', 'm', 'lo'
@@ -107,6 +121,7 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
 
 #' Return the list of all items
 #'
+#' @author Laurent Drouet
 #' @export
 all_items <- function(x, ...) {
     UseMethod("all_items", x)

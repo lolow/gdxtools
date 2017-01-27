@@ -1,8 +1,8 @@
 #' include some parts of gdxrrw from https://support.gams.com/gdxrrw:interfacing_gams_and_r
 #' @useDynLib gdxtools, gamsExt, gdxInfoExt, igdxExt, rgdxExt, wgdxExt
 
-
-#'@export
+#' @author Steve Dirkse
+#' @export
 rgdx <- function(gdxName, requestList = NULL, squeeze=TRUE, useDomInfo=TRUE,
                  followAlias=TRUE)
 {
@@ -18,18 +18,22 @@ rgdx <- function(gdxName, requestList = NULL, squeeze=TRUE, useDomInfo=TRUE,
   }
 }
 
+#' @author Steve Dirkse
 #'@export
 wgdx <- function(gdxName, ..., squeeze='y')
 {
   invisible(.External(wgdxExt, gdxName=gdxName, ..., squeeze=squeeze))
 }
 
+#'@author Steve Dirkse
 #'@export
 gams <- function(gmsAndArgs)
 {
   .External(gamsExt, gmsAndArgs)
+  #system2(paste(Sys.which('gams'),gmsAndArgs))
 }
 
+#' @author Steve Dirkse
 #'@export
 gdxInfo <- function(gdxName = NULL, dump=TRUE, returnList=FALSE, returnDF=FALSE)
 {
@@ -56,12 +60,14 @@ gdxInfo <- function(gdxName = NULL, dump=TRUE, returnList=FALSE, returnDF=FALSE)
   }
 } # gdxInfo
 
+#' @author Steve Dirkse
 #'@export
 igdx <- function(gamsSysDir = NULL, silent = FALSE, returnStr = FALSE)
 {
   invisible(.External(igdxExt, gamsSysDir, silent=silent, returnStr=returnStr))
 }
 
+#' @author Steve Dirkse
 #'@export
 rgdx.param <- function(gdxName, symName, names=NULL, compress=FALSE,
                        ts=FALSE, squeeze=TRUE, useDomInfo=TRUE,
@@ -235,6 +241,7 @@ defNames <- function(n,isPar)
   return(dnames)
 } # defNames
 
+#' @author Steve Dirkse
 #'@export
 rgdx.set <- function(gdxName, symName, names=NULL, compress=FALSE,
                      ts=FALSE, useDomInfo=TRUE, check.names=TRUE, te=FALSE)

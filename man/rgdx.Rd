@@ -10,4 +10,7 @@ rgdx(gdxName, requestList = NULL, squeeze = TRUE, useDomInfo = TRUE,
 \description{
 include some parts of gdxrrw from https://support.gams.com/gdxrrw:interfacing_gams_and_r
 }
+\author{
+Steve Dirkse
+}
 

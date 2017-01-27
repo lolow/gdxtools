@@ -4,7 +4,8 @@ Title: Manipulate GDX Files
 Version: 0.4.0
 Date: 2017-01-27
 SystemRequirements: GAMS (>= 24.2.1)
-Authors@R: person("Laurent", "Drouet", ,"ldrouet@gmail.com", role = c("aut", "cre"))
+Authors@R: c(person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@gmail.com"), 
+           person("Steve","Dirkse", role=c("cph")))
 Description: Get info on GDX files (GAMS database exchange files)
     and convert parameters and variables data into data.frame.
 License: EPL

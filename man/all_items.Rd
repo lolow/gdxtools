@@ -9,4 +9,7 @@ all_items(x, ...)
 \description{
 Return the list of all items
 }
+\author{
+Laurent Drouet
+}
 

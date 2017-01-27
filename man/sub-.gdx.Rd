@@ -2,11 +2,21 @@
 % Please edit documentation in R/gdx.R
 \name{[.gdx}
 \alias{[.gdx}
-\title{Wrap extract.gdx}
+\title{Extract data from a gdx}
 \usage{
 \method{[}{gdx}(x, ...)
 }
 \description{
-Wrap extract.gdx
+Extract data from a gdx
+}
+\examples{
+
+  \dontrun{
+    mygdx <- gdx('results.gdx')
+    travel_cost <- mygdx["travel_cost"]
+  }
+}
+\author{
+Laurent Drouet
 }
 
