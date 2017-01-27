@@ -101,7 +101,7 @@ write.gdx <- function(file, params=list(),
   writeLines("$offdigit", fgms)
   writeLines("$onempty", fgms)
   # collect and write sets
-  alllists = c(params,vars_l,vars_lo,vars_up)
+  alllists = c(params,vars_l,vars_lo,vars_up,sets)
   allsets = unique(unlist(lapply(alllists, names)))
   allsets = subset(allsets, !allsets %in% c('*','value'))
   for(i in seq_along(allsets)){
@@ -114,10 +114,10 @@ write.gdx <- function(file, params=list(),
   }
   # Write sets
   for(i in seq_along(sets)){
-    s = sets[i]
-    writeLines(paste("set", names(sets)[i],
-                     "(",paste(rep('*',length(ncol(s))),collapse=","),")/"), fgms)
-    writeLines(paste0("'",paste(apply(s[,names(s)],1,paste,collapse="','")),"'"), fgms)
+    s = sets[[i]]
+    writeLines(paste0("set ", names(sets)[i],
+                     " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
+    writeLines(paste0("'",paste(apply(as.data.frame(s)[,names(s)],1,paste,collapse="'.'")),"'"), fgms)
     writeLines("/;", fgms)
   }
   # Write parameters
