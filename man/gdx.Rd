@@ -12,4 +12,13 @@ gdx(filename, ...)
 \description{
 GDX file
 }
+\examples{
+
+  \dontrun{
+    mygdx <- gdx('results.gdx')
+  }
+}
+\author{
+Laurent Drouet
+}
 

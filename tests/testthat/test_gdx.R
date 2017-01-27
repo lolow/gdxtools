@@ -1,6 +1,5 @@
-library(gdxrrw)
 library(gdxtools)
-igdx("/opt/gams24.5")
+igdx('C:/GAMS/win64/24.8/')
 
 context("gdx manipulation")
 

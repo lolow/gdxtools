@@ -7,7 +7,7 @@ The gdxtools package converts data (parameter or variables) from a GDX file (pro
 Download the latest release zip here [https://github.com/lolow/gdxtools/releases/latest]
 
 ```R
-install.packages("gdxtools_0.3.x.zip",repos=NULL)
+install.packages("gdxtools_0.4.x.zip",repos=NULL)
 ```
 
 or install the development version
@@ -23,6 +23,9 @@ An interesting script can be used to load (and install if necessary) R packages,
 
 ```R
 library(gdxtools)
+
+# If necessary, tell where is located GAMS.
+igdx(dirname(Sys.which('gams'))) 
 
 # define a gdx
 > mygdx <- gdx('results.gdx')

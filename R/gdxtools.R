@@ -2,23 +2,52 @@
 #'
 #' @name gdxtools
 #' @docType package
-#' @import gdxrrw
 #'
 NULL
 
 .onAttach <- function(libname, pkgname) {
   if (!interactive()) return()
   packageStartupMessage(paste("gdxtools",utils::packageVersion("gdxtools")))
-  # try to specify the gams installation
-  igdx(dirname(Sys.which("gams")))
+  if(Sys.info()[['sysname']]=='Windows'){
+    gamsname = 'gams.exe'
+  } else {
+    gamsname = 'gams'
+  }
+  .res <- ''
+  # try to specify the gams installation from PATH
+  .res = igdx('',TRUE,TRUE)
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    .res = igdx(dirname(Sys.which("gams.exe")),TRUE,TRUE)
+  }
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    if(Sys.info()[['sysname']]=='Windows'){
+      #try to load the latest version of GAMS
+      guess_gams_path = rev(sort(Sys.glob("C:\\GAMS\\win**\\**")))
+      if(length(guess_gams_path)>0){
+        .res=igdx(guess_gams_path[1],TRUE,TRUE)
+      }
+    }
+  }
+  if(.res=='' | !file.exists(file.path(.res,gamsname))){
+    packageStartupMessage('Please specify the GAMS directory with the function "igdx"')
+  } else {
+    packageStartupMessage(paste('GDX library load path:',.res))
+  }
 }
 
 #' Extract a list of items from many GDX
 #'
-#' @export
 #' @param items vector or list of items to extract
 #' @param files list of files, if not defined gdxs should be defined
 #' @param gdxs list of gdxs, if not defined files should be defined
+#' @author Laurent Drouet
+#' @examples
+#'
+#'   \dontrun{
+#'     myfiles = c("test1.gdx","test2.gdx")
+#'     allparam <- batch_extract("myparam",files=myfiles)
+#'   }
+#' @export
 batch_extract <- function(items,files=NULL,gdxs=NULL){
   if(is.null(gdxs)){
     gdxs = lapply(files, gdx)
@@ -46,6 +75,7 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
 #' @param removeLST remove temporary lst file
 #' @param digit number of digits to use
 #' @param compress compress GDX
+#' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
 #'     param1 = data.frame(x=c('1','2'),value=1:10)
@@ -57,6 +87,7 @@ write.gdx <- function(file, params=list(),
                       vars_l=list(),
                       vars_lo=list(),
                       vars_up=list(),
+                      sets=list(),
                       removeLST=T, usetempdir=T, digits=16, compress=T){
   # Create a temporary gams file
   if(usetempdir){
@@ -70,7 +101,7 @@ write.gdx <- function(file, params=list(),
   writeLines("$offdigit", fgms)
   writeLines("$onempty", fgms)
   # collect and write sets
-  alllists = c(params,vars_l,vars_lo,vars_up)
+  alllists = c(params,vars_l,vars_lo,vars_up,sets)
   allsets = unique(unlist(lapply(alllists, names)))
   allsets = subset(allsets, !allsets %in% c('*','value'))
   for(i in seq_along(allsets)){
@@ -79,6 +110,14 @@ write.gdx <- function(file, params=list(),
     lvalues = lapply(alllists, function(x) unique((as.character(x[[s]]))))
     values = unique(unlist(lvalues))
     writeLines(values, fgms)
+    writeLines("/;", fgms)
+  }
+  # Write sets
+  for(i in seq_along(sets)){
+    s = sets[[i]]
+    writeLines(paste0("set ", names(sets)[i],
+                     " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
+    writeLines(paste0("'",paste(apply(as.data.frame(s)[,names(s)],1,paste,collapse="'.'")),"'"), fgms)
     writeLines("/;", fgms)
   }
   # Write parameters

@@ -16,4 +16,14 @@ batch_extract(items, files = NULL, gdxs = NULL)
 \description{
 Extract a list of items from many GDX
 }
+\examples{
+
+  \dontrun{
+    myfiles = c("test1.gdx","test2.gdx")
+    allparam <- batch_extract("myparam",files=myfiles)
+  }
+}
+\author{
+Laurent Drouet
+}
 

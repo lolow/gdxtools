@@ -5,8 +5,8 @@
 \title{Write a list of parameters in a gdx}
 \usage{
 write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
-  vars_up = list(), removeLST = T, usetempdir = T, digits = 16,
-  compress = T)
+  vars_up = list(), sets = list(), removeLST = T, usetempdir = T,
+  digits = 16, compress = T)
 }
 \arguments{
 \item{file}{the filename of the gdx to save}
@@ -37,5 +37,8 @@ Write a list of parameters in a gdx
     write.gdx("test.gdx",list(param1=param1,param2=param2))
  }
 
+}
+\author{
+Laurent Drouet
 }
 
