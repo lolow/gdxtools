@@ -19,4 +19,3 @@ Extract data from a gdx
 \author{
 Laurent Drouet
 }
-

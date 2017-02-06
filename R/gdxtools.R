@@ -17,7 +17,7 @@ NULL
   # try to specify the gams installation from PATH
   .res = igdx('',TRUE,TRUE)
   if(.res=='' | !file.exists(file.path(.res,gamsname))){
-    .res = igdx(dirname(Sys.which("gams.exe")),TRUE,TRUE)
+    .res = igdx(dirname(Sys.which(gamsname)),TRUE,TRUE)
   }
   if(.res=='' | !file.exists(file.path(.res,gamsname))){
     if(Sys.info()[['sysname']]=='Windows'){

@@ -26,4 +26,3 @@ Extract a list of items from many GDX
 \author{
 Laurent Drouet
 }
-

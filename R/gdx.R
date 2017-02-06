@@ -10,7 +10,7 @@
 #' @export
 gdx <- function(filename, ...) {
   if(file.exists(filename)){
-    info = gdxrrw::gdxInfo(filename, dump = F, returnDF = T)
+    info = gdxInfo(filename, dump = F, returnDF = T)
     return(structure(list(filename = filename,
                           sets = info$sets,
                           parameters = info$parameters,
@@ -73,17 +73,17 @@ extract <- function(x, ...) {
 extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
   text = ""
   if(item %in% x$variables$name){
-    res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
+    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
     #TODO text is not existing
     #if("text" %in% colnames(x$variables)) text = x$variables$text[item==x$variables$name]
   } else if(item %in% x$equations$name){
-    res = gdxrrw::rgdx(x$filename, list(name = item, field = field), squeeze = F)
+    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
     if("text" %in% colnames(x$equations)) text = x$equations$text[item==x$equations$name]
   } else if(item %in% x$parameters$name){
-    res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+    res = rgdx(x$filename, list(name = item), squeeze = F)
     if("text" %in% colnames(x$parameters)) text = x$parameters$text[item==x$parameters$name]
   } else if(item %in% x$sets$name){
-    res = gdxrrw::rgdx(x$filename, list(name = item), squeeze = F)
+    res = rgdx(x$filename, list(name = item), squeeze = F)
     if("text" %in% colnames(x$sets)) text = x$sets$text[item==x$sets$name]
   } else {
     warning("item not found")
@@ -138,7 +138,7 @@ all_items <- function(x, ...) {
 #'  }
 #'
 all_items.gdx <- function(x, ...) {
-    info = gdxrrw::gdxInfo(x$filename, dump = F, returnList = T)
+    info = gdxInfo(x$filename, dump = F, returnList = T)
     return(list(variables = info[["variables"]],
       parameters = info[["parameters"]],
       sets = info[["sets"]],

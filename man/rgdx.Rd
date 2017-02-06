@@ -13,4 +13,3 @@ include some parts of gdxrrw from https://support.gams.com/gdxrrw:interfacing_ga
 \author{
 Steve Dirkse
 }
-

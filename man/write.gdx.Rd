@@ -41,4 +41,3 @@ Write a list of parameters in a gdx
 \author{
 Laurent Drouet
 }
-

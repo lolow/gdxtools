@@ -9,4 +9,3 @@ extract(x, ...)
 \description{
 Extract data from a gdx
 }
-

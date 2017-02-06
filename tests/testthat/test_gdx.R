@@ -1,5 +1,5 @@
 library(gdxtools)
-igdx('C:/GAMS/win64/24.8/')
+igdx(dirname(Sys.which('gams')))
 
 context("gdx manipulation")
 

@@ -21,4 +21,3 @@ GDX file
 \author{
 Laurent Drouet
 }
-

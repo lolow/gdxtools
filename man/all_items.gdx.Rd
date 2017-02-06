@@ -19,4 +19,3 @@ Return the list of all items
  }
 
 }
-
