@@ -1,7 +1,7 @@
 library(gdxtools)
 igdx(dirname(Sys.which('gams')))
 
-context("gdx manipulation")
+context("gdx reading")
 
 test_that("define a gdx", {
   #expect_match(gdx('ampl.gdx'),"gdx")
@@ -41,7 +41,10 @@ test_that("get data on parameters", {
   expect_equal(names(g["b"]),c("r","value"))
 })
 
-params = list(b=g["b"],c=g["c"],d=g["d"])
+context("gdx writing")
+
+params = list(b=g["b"],c=g["c"],d=g["d"],
+              e=data.frame(id=c("with space","with.dot"),value=c(133,233)))
 write.gdx("out_param.gdx",params=params)
 gp = gdx('out_param.gdx')
 
@@ -70,7 +73,8 @@ test_that("write_gdx", {
   expect_equal(gv["s","up"]$value,g["s","up"]$value)
   expect_equal(gv["profit","lo"]$value,g["profit","lo"]$value)
   expect_equal(gv["profit","up"]$value,g["profit","up"]$value)
-
+  expect_equal(subset(gv["e"],id=="with space")$value,133)
+  expect_equal(subset(gv["e"],id=="with.dot")$value,233)
 })
 
 file.remove("out_param.gdx")

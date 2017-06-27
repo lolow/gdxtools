@@ -1,3 +1,11 @@
+# gdxtools 0.5.0 [development]
+
+* Allows for space and dots in set names when writing gdx
+
+# gdxtools 0.4.0
+
+* Includes gdxrrw
+
 # gdxtools 0.3.5
 
 * speed up in extract gdx

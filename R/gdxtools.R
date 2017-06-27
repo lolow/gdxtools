@@ -109,7 +109,7 @@ write.gdx <- function(file, params=list(),
     writeLines(paste("set", s, "/"), fgms)
     lvalues = lapply(alllists, function(x) unique((as.character(x[[s]]))))
     values = unique(unlist(lvalues))
-    writeLines(values, fgms)
+    writeLines(paste0("'",values,"'"), fgms)
     writeLines("/;", fgms)
   }
   # Write sets
@@ -124,15 +124,16 @@ write.gdx <- function(file, params=list(),
   for(i in seq_along(params)){
     p = params[[i]]
     text = ifelse("gams" %in% names(attributes(p)),attributes(p)$gams,"")
+    name = ifelse(names(params)[i]=="",paste0("param",i),names(params)[i])
     if(length(colnames(p))==1){
-      writeLines(paste("scalar", names(params)[i], " '", text, "' /", format(as.numeric(p[1]),digits=digits), "/;"), fgms)
+      writeLines(paste("scalar", name, " '", text, "' /", format(as.numeric(p[1]),digits=digits), "/;"), fgms)
     } else {
       indices = subset(colnames(p), colnames(p) != "value")
       p[[length(indices)+1]] = format(p[[length(indices)+1]],digits=digits)
-      writeLines(paste0("parameter ", names(params)[i],
+      writeLines(paste0("parameter ", name,
                         "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate <- function(row, len) paste(paste(row[1:len],collapse="."), row[len+1])
-      writeLines(apply(p,1,concatenate, len=length(indices)), fgms)
+      concatenate <- function(row, len) paste(paste(paste0("'",row[1:len],"'"),collapse="."), row[len+1])
+      writeLines(apply(subset(p,value!=0),1,concatenate, len=length(indices)), fgms)
       writeLines("/;", fgms)
     }
   }
