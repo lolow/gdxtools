@@ -1,5 +1,6 @@
 # gdxtools 0.5.1
 
+* Can write set with one dimension
 * Fix writing with sets containing digits with different size
 * Allows for space and dots in set names when writing gdx
 
