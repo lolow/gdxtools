@@ -53,10 +53,17 @@ igdx(dirname(Sys.which('gams')))
 > allparam = batch_extract("myparam",files=myfiles)
 
 # write gdx
-> param1 = data.frame(x=c('1','2'),value=1:10)
+> param1 = data.frame(x=c('1','2','4','8'),value=1:4)
 > attributes(param1) = c(attributes(param1), gams="definition of parameter 1")
 > param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
 > write.gdx("test.gdx",list(param1=param1,param2=param2))
 
+# write a set
+> myset1 = data.frame(a=c('london','paris','tahiti'))
+> myset2 = data.frame(a=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
+> write.gdx("test.gdx",list(sets=list(city=myset1,road=myset2)))
+
+# debugging the writing of a gdx
+> write.gdx("test.gdx", list(param1=param1,param2=param2), removeLST = F, usetempdir = F)
 
 ```

@@ -117,7 +117,12 @@ write.gdx <- function(file, params=list(),
     s = sets[[i]]
     writeLines(paste0("set ", names(sets)[i],
                      " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
-    writeLines(paste0("'",paste(apply(as.data.frame(s)[,names(s)],1,paste,collapse="'.'")),"'"), fgms)
+    if(ncol(s)==1){
+      writeLines(paste0("'",trimws(s[,1]),"'"), fgms)
+    }
+    if(ncol(s)>1){
+      writeLines(paste0("'",paste(apply(as.data.frame(s)[,names(s)],1,paste,collapse="'.'")),"'"), fgms)
+    }
     writeLines("/;", fgms)
   }
   # Write parameters
@@ -132,7 +137,7 @@ write.gdx <- function(file, params=list(),
       p[[length(indices)+1]] = format(p[[length(indices)+1]],digits=digits)
       writeLines(paste0("parameter ", name,
                         "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate <- function(row, len) paste(paste(paste0("'",row[1:len],"'"),collapse="."), row[len+1])
+      concatenate <- function(row, len) paste(paste(paste0("'",trimws(row[1:len]),"'"),collapse="."), row[len+1])
       writeLines(apply(subset(p,value!=0),1,concatenate, len=length(indices)), fgms)
       writeLines("/;", fgms)
     }
@@ -156,7 +161,7 @@ write.gdx <- function(file, params=list(),
   }
   concatenate <- function(row, len, vname, vext) {
     paste0(vname,vext,"(",
-           paste(paste0("'",row[1:len],"'"),collapse=","),
+           paste(paste0("'",trimws(row[1:len]),"'"),collapse=","),
            ")=",row[len+1],";")
   }
   for(i in seq_along(vars_l)){

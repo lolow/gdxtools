@@ -1,8 +1,8 @@
 Package: gdxtools
 Type: Package
 Title: Manipulate GDX Files
-Version: 0.5.0
-Date: 2017-01-27
+Version: 0.5.1
+Date: 2018-03-16
 SystemRequirements: GAMS (>= 24.2.1)
 Authors@R: c(person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@gmail.com"), 
            person("Steve","Dirkse", role=c("cph")))

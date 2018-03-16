@@ -79,3 +79,27 @@ test_that("write_gdx", {
 
 file.remove("out_param.gdx")
 file.remove("out_var.gdx")
+
+test_that("write_gdx different digits", {
+
+  param1 = data.frame(x=c(1,2,22),value=1:3)
+  params = list(param1=param1)
+  write.gdx(basename("test.gdx"), params = params)
+
+  expect_true(file.exists("test.gdx"))
+
+})
+
+file.remove("test.gdx")
+
+test_that("write_gdx different digits", {
+
+myset1 = data.frame(a=c('london','paris','tahiti'))
+myset2 = data.frame(a=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
+write.gdx("test.gdx",sets=list(city=myset1,road=myset2))
+
+expect_true(file.exists("test.gdx"))
+
+})
+
+file.remove("test.gdx")

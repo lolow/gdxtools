@@ -1,5 +1,6 @@
-# gdxtools 0.5.0 [development]
+# gdxtools 0.5.1
 
+* Fix writing with sets containing digits with different size
 * Allows for space and dots in set names when writing gdx
 
 # gdxtools 0.4.0
