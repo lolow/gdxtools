@@ -59,7 +59,7 @@ gv = gdx('out_var.gdx')
 
 test_that("write_gdx", {
   expect_equal(gp["b"],g["b"])
-  expect_equal(gp["c"],g["c"])
+  expect_equal(gp["c"]$value,g["c"][order(g["c"]$p),]$value)
   expect_equal(gp["d"],g["d"])
   expect_equal(gv["b"],g["b"])
   expect_equal(gv["c"],g["c"])
@@ -92,10 +92,10 @@ test_that("write_gdx different digits", {
 
 file.remove("test.gdx")
 
-test_that("write_gdx different digits", {
+test_that("write_gdx sets", {
 
-myset1 = data.frame(a=c('london','paris','tahiti'))
-myset2 = data.frame(a=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
+myset1 = data.frame(`*`=c('london','paris','tahiti'))
+myset2 = data.frame(`*`=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
 write.gdx("test.gdx",sets=list(city=myset1,road=myset2))
 
 expect_true(file.exists("test.gdx"))

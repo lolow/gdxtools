@@ -1,3 +1,8 @@
+# gdxtools 0.6.0
+
+* Faster write gdx when only parameters and/or sets using gdxrrw
+* Fast write2 gdx function
+
 # gdxtools 0.5.1
 
 * Can write set with one dimension

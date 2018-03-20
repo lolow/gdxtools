@@ -63,11 +63,74 @@ batch_extract <- function(items,files=NULL,gdxs=NULL){
   return(lall)
 }
 
-#' Write a list of parameters in a gdx
+#' Write a list of parameters or sets in a gdx, using gdxrrw (faster than write.gdx, but less options)
 #'
 #' @export
 #' @param file the filename of the gdx to save
 #' @param params named list of parameters
+#' @param sets named list of sets
+#' @author Laurent Drouet
+#' @examples
+#'  \dontrun{
+#'     param1 = data.frame(x=c('1','2'),value=1:10)
+#'     param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
+#'     write.gdx("test.gdx",list(param1=param1,param2=param2))
+#'  }
+#'
+write2.gdx <- function(file, params=list(),
+                      sets=list()){
+  value = NULL
+  coll = list()
+  # sets
+  for(i in seq_along(sets)){
+    s = sets[[i]]
+    text = ifelse("gams" %in% names(attributes(sets[i])),attributes(sets[i])$gams,"")
+    name = ifelse(names(sets)[i]=="",paste0("set",i),names(sets)[i])
+    dim = ncol(s)
+    uels = list()
+    val = matrix(0,ncol=ncol(s),nrow=nrow(s))
+    domains = rep('*',dim)
+    for(j in 1:dim){
+      f = factor(s[[j]])
+      uels = c(uels, list(levels(f)))
+      val[,j] = as.numeric(f)
+    }
+    coll = c(coll,list(list(name=name, type='set', dim=dim, val=val,
+                       uels=uels, domains=domains, ts=text)))
+  }
+  # parameters
+  for(i in seq_along(params)){
+    p = subset(params[[i]], value!=0)
+    text = ifelse("gams" %in% names(attributes(params[[i]])),attributes(params[[i]])$gams,"")
+    name = ifelse(names(params)[[i]]=="",paste0("param",i),names(params)[[i]])
+    dim = ncol(p)-1
+    if(dim>0){
+      uels = list()
+      val = matrix(0,ncol=ncol(p),nrow=nrow(p))
+      domains = names(p)[names(p)!="value"]
+      for(j in 1:dim){
+        f = factor(p[[j]])
+        uels = c(uels, list(levels(f)))
+        val[,j] = as.numeric(f)
+      }
+      val[,dim+1] = p$value
+      coll = c(coll,list(list(name=name, type='parameter', form='sparse',
+                              dim=dim, val=val, uels=uels, domains=domains, ts=text)))
+    } else {
+      coll = c(coll,list(list(name=name, type='parameter', form='full',
+                              dim=0, val=p$value, ts=text)))
+    }
+  }
+  # write into a gdx
+  return(wgdx(file,coll))
+}
+
+#' Write a list of parameters in a gdx (old version which uses a temporary gams file)
+#'
+#' @export
+#' @param file the filename of the gdx to save
+#' @param params named list of parameters
+#' @param sets named list of sets
 #' @param vars_l named list of variable levels
 #' @param vars_lo named list of variable lower bounds
 #' @param vars_up named list of variable upper bounds
@@ -88,7 +151,12 @@ write.gdx <- function(file, params=list(),
                       vars_lo=list(),
                       vars_up=list(),
                       sets=list(),
-                      removeLST=T, usetempdir=T, digits=16, compress=T){
+                      removeLST=T, usetempdir=T, digits=16, compress=F){
+  value = NULL
+  # switch to faster write function when possible
+  if(!compress & length(vars_l)==0 & length(vars_lo)==0 & length(vars_up)==0){
+    return(write2.gdx(file, params = params, sets = sets))
+  }
   # Create a temporary gams file
   if(usetempdir){
     gms = tempfile(pattern = "wgdx", fileext = ".gms")
@@ -116,7 +184,7 @@ write.gdx <- function(file, params=list(),
   for(i in seq_along(sets)){
     s = sets[[i]]
     writeLines(paste0("set ", names(sets)[i],
-                     " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
+                      " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
     if(ncol(s)==1){
       writeLines(paste0("'",trimws(s[,1]),"'"), fgms)
     }
@@ -137,8 +205,8 @@ write.gdx <- function(file, params=list(),
       p[[length(indices)+1]] = format(p[[length(indices)+1]],digits=digits)
       writeLines(paste0("parameter ", name,
                         "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate <- function(row, len) paste(paste(paste0("'",trimws(row[1:len]),"'"),collapse="."), row[len+1])
-      writeLines(apply(subset(p,value!=0),1,concatenate, len=length(indices)), fgms)
+      concatenate1 <- function(row, len) paste(paste(paste0("'",trimws(row[1:len]),"'"),collapse="."), row[len+1])
+      writeLines(apply(subset(p,value!=0),1,concatenate1, len=length(indices)), fgms)
       writeLines("/;", fgms)
     }
   }
@@ -159,7 +227,7 @@ write.gdx <- function(file, params=list(),
       varnames = c(varnames,names(allvars)[i])
     }
   }
-  concatenate <- function(row, len, vname, vext) {
+  concatenate2 <- function(row, len, vname, vext) {
     paste0(vname,vext,"(",
            paste(paste0("'",trimws(row[1:len]),"'"),collapse=","),
            ")=",row[len+1],";")
@@ -173,7 +241,7 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate, len=length(indices), vname=names(vars_l)[i], vext=".l"), fgms)
+        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_l)[i], vext=".l"), fgms)
       }
     }
   }
@@ -186,7 +254,7 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate, len=length(indices), vname=names(vars_lo)[i], vext=".lo"), fgms)
+        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_lo)[i], vext=".lo"), fgms)
       }
     }
   }
@@ -199,7 +267,7 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate, len=length(indices), vname=names(vars_up)[i], vext=".up"), fgms)
+        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_up)[i], vext=".up"), fgms)
       }
     }
   }
@@ -214,4 +282,3 @@ write.gdx <- function(file, params=list(),
   if(removeLST) file.remove(lst)
   return(res)
 }
-

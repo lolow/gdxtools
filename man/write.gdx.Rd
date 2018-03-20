@@ -2,11 +2,11 @@
 % Please edit documentation in R/gdxtools.R
 \name{write.gdx}
 \alias{write.gdx}
-\title{Write a list of parameters in a gdx}
+\title{Write a list of parameters in a gdx (old version which uses a temporary gams file)}
 \usage{
 write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
   vars_up = list(), sets = list(), removeLST = T, usetempdir = T,
-  digits = 16, compress = T)
+  digits = 16, compress = F)
 }
 \arguments{
 \item{file}{the filename of the gdx to save}
@@ -19,6 +19,8 @@ write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
 
 \item{vars_up}{named list of variable upper bounds}
 
+\item{sets}{named list of sets}
+
 \item{removeLST}{remove temporary lst file}
 
 \item{usetempdir}{uses system temp dir for the temporary files, otherwise use local file "tmp.gms"}
@@ -28,7 +30,7 @@ write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
 \item{digit}{number of digits to use}
 }
 \description{
-Write a list of parameters in a gdx
+Write a list of parameters in a gdx (old version which uses a temporary gams file)
 }
 \examples{
  \dontrun{

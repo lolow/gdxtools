@@ -61,9 +61,24 @@ igdx(dirname(Sys.which('gams')))
 # write a set
 > myset1 = data.frame(a=c('london','paris','tahiti'))
 > myset2 = data.frame(a=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
-> write.gdx("test.gdx",list(sets=list(city=myset1,road=myset2)))
+> write.gdx("test1.gdx", sets=list(city=myset1,road=myset2))
+
+# write a variable
+> var_lower_bound = data.frame(a=c('london','paris','tahiti'),value=1e-2)
+> var_level = data.frame(a=c('london','paris','tahiti'),value=0.2)
+> var_upper_bound = data.frame(a=c('london','paris','tahiti'),value=50)
+> write.gdx("test2.gdx",list(vars_lo=var_lower_bound,vars_l=var_level,vars_up=var_upper_bound))
 
 # debugging the writing of a gdx
 > write.gdx("test.gdx", list(param1=param1,param2=param2), removeLST = F, usetempdir = F)
+
+# writing a uncompressed gdx (gdx is compressed by default)
+> write.gdx("test.gdx", list(param1=param1,param2=param2), compress = F)
+
+# Write gdx faster using gdxrrw API (but less options are available)
+> param1 = data.frame(x=c('1','2','4','8'),value=1:4)
+> attributes(param1) = c(attributes(param1), gams="definition of parameter 1")
+> param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
+> write2.gdx("test.gdx",list(param1=param1,param2=param2))
 
 ```
