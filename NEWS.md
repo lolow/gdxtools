@@ -1,3 +1,7 @@
+# gdxtools 0.7.0
+
+* Includes gdxrrw 1.0.8
+
 # gdxtools 0.6.0
 
 * Faster write gdx when only parameters and/or sets using gdxrrw
