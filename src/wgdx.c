@@ -1,6 +1,6 @@
 /* wgdx.c
  * code for gdxrrw::wgdx
- * $Id: wgdx.c 57609 2016-06-10 02:02:59Z sdirkse $
+ * $Id: wgdx.c 68444 2020-10-27 00:39:43Z sdirkse $
  */
 
 #include <R.h>
@@ -1702,6 +1702,7 @@ writeGdx (char *gdxFileName, int symListLen, SEXP *symList,
   if (errNum || 0 == rc)
     error("Could not open gdx file with gdxOpenWrite: %s", getGDXErrorMsg());
 
+  gdxStoreDomainSetsSet (gdxHandle, 0);
   gdxGetSpecialValues (gdxHandle, sVals);
 #if 0
   d64.u64 = 0x7fffffffffffffff; /* positive QNaN, mantissa all on */
@@ -1864,8 +1865,6 @@ writeGdx (char *gdxFileName, int symListLen, SEXP *symList,
     }
 
     if (wSpecPtr[iSym]->dForm == sparse) {
-      Rboolean inventSetText = INVENT_SET_TEXT_DEFAULT;
-
       dimVect = getAttrib(valData, R_DimSymbol);
       nColumns = INTEGER(dimVect)[1];
       nRows = INTEGER(dimVect)[0];
@@ -1885,9 +1884,6 @@ writeGdx (char *gdxFileName, int symListLen, SEXP *symList,
           rc = gdxDataWriteMapStart (gdxHandle, wSpecPtr[iSym]->name, expText,
                                      nColumns, GMS_DT_SET, 0);
           vals[0] = 0;
-          if (teExp) {
-            inventSetText = getInventSetText (INVENT_SET_TEXT_DEFAULT);
-          }
         }
         if (!rc) {
           error("Error calling gdxDataWriteMapStart for symbol '%s': %s",
@@ -1935,15 +1931,14 @@ writeGdx (char *gdxFileName, int symListLen, SEXP *symList,
             sExp = STRING_ELT(teExp, iRow);
             vals[0] = 0;
             if (sExp == R_NaString) {
-              /* NA always maps to <no associated text stored> */
+              /* NA always maps to empty string, i.e. 0==vals[0] */
               /* Rprintf ("  found R_NaString: no atext!\n"); */
             }
             else {
               s = CHAR(sExp);
-              if (s) {    /* NULL always maps to <no associated text stored> */
-                if (('\0' != *s) || (FALSE != inventSetText)) {
+              if (s) {    /* NULL always maps to empty string, i.e. 0==vals[0] */
+                if ('\0' != *s) {
                   /* nonempty string is always meaningful */
-                  /* if inventSetText!=F, empty string also significant: not mapped to <no text> */
                   rc = gdxAddSetText (gdxHandle, s, &txtIdx);
                   /* Rprintf ("  addSetText rc=%d  txtIdx=%d\n", rc, txtIdx); */
                   if (rc)

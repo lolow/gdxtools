@@ -27,7 +27,7 @@ void loadPathHack (char buf[256], void *addr)
   size_t sz;
   DWORD k;
   BOOL brc;
-  char libBuf[1024];
+  char libBuf[1024], dirBuf[1024], drive[3], *p, *s, *end;
 
   buf[0] = '\0';
   brc = GetModuleHandleEx (GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
@@ -36,10 +36,25 @@ void loadPathHack (char buf[256], void *addr)
   if (brc) {  /* OK: got a handle */
     k = GetModuleFileName (h, libBuf, sizeof(libBuf));
     if (k > 0) {                /* success */
-      /* do some trimming later */
-      sz = strlen(libBuf);
+      p = dirBuf + 3;
+      _splitpath(libBuf,drive,p,NULL,NULL);
+      /* trim trailing slashes */
+      end = p + strlen(p);
+      s = end - 1;
+      while ( (s >= p) &&
+	      (('/' == *s) || ('\\' == *s)) )
+	s--;
+      if (s >= p) {		/* s is a non-slash, part of the dir */
+	*++s = '\0';
+      }
+      /* prepend the drive */
+      sz = strlen(drive);
+      s = drive + sz;
+      while (s > drive)
+	*--p = *--s;
+      sz = strlen(p);
       if (sz <= 255) {
-        memcpy (buf, libBuf, sz);
+        memcpy (buf, p, sz);
         buf[sz] = '\0';
       }
     }

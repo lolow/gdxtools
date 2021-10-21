@@ -1,6 +1,6 @@
 /* rgdx.c
  * code for gdxrrw::rgdx
- * $Id: rgdx.c 51955 2015-04-30 14:56:55Z sdirkse $
+ * $Id: rgdx.c 68221 2019-09-27 16:31:24Z sdirkse $
  */
 
 #include <R.h>
@@ -385,7 +385,7 @@ SEXP rgdxExt (SEXP args)
   int foundTuple;
   int arglen, matched = -1;
   double *p, *dimVal;
-  char buf[3*sizeof(shortStringBuf_t)];
+  char buf[2*sizeof(shortStringBuf_t)+1024];  /* 1024 for rSpec_t::name */
   char strippedID[GMS_SSSIZE];
   char symName[GMS_SSSIZE];
   char symText[GMS_SSSIZE], msg[GMS_SSSIZE], stringEle[GMS_SSSIZE];

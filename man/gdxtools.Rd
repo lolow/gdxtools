@@ -3,8 +3,4 @@
 \docType{package}
 \name{gdxtools}
 \alias{gdxtools}
-\alias{gdxtools-package}
 \title{gdxtools}
-\description{
-gdxtools
-}

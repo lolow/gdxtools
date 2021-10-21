@@ -4,8 +4,13 @@
 \alias{rgdx}
 \title{include some parts of gdxrrw from https://support.gams.com/gdxrrw:interfacing_gams_and_r}
 \usage{
-rgdx(gdxName, requestList = NULL, squeeze = TRUE, useDomInfo = TRUE,
-  followAlias = TRUE)
+rgdx(
+  gdxName,
+  requestList = NULL,
+  squeeze = TRUE,
+  useDomInfo = TRUE,
+  followAlias = TRUE
+)
 }
 \description{
 include some parts of gdxrrw from https://support.gams.com/gdxrrw:interfacing_gams_and_r

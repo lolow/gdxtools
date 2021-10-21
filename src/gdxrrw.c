@@ -43,7 +43,7 @@
 #include "globals.h"
 
 /* The version info below changes when this file is updated */
-char ID[GMS_SSSIZE] = "$Id: gdxrrw.c 57609 2016-06-10 02:02:59Z sdirkse $";
+char ID[GMS_SSSIZE] = "$Id: gdxrrw.c 68487 2020-12-10 16:42:21Z sdirkse $";
 
 /* -------------------- Method declaration -----------------------*/
 
@@ -114,6 +114,7 @@ getGamsSysdir (char dir[], int dirSiz)
   i = (int) strlen (loadPath);
   if (i >= dirSiz)
     return;                     /* fail */
+
   strcpy (dir, loadPath);
   return;                       /* success */
 } /* getGamsSysdir */
@@ -162,7 +163,6 @@ callGams (const char *gamsCmd)
 #endif /* windows */
 
   getGamsSysdir (absGamsSysdir, sizeof(absGamsSysdir));
-
   if ('\0' == absGamsSysdir[0]) {
     gamsExeName = gamsExeBaseName;
   }
@@ -182,10 +182,11 @@ callGams (const char *gamsCmd)
   }
   (void) CHAR2ShortStr (gamsCmd, jobString);
 
-  cmdLine = malloc(strlen(gamsExeName) + 1 + strlen(jobString)
+  cmdLine = malloc(strlen(gamsExeName) + 2 + 1 + strlen(jobString)
                    + 1 + 6);
-  strcpy (cmdLine, gamsExeName);
-  strcat (cmdLine, " ");
+  strcpy (cmdLine, "\"");
+  strcat (cmdLine, gamsExeName);
+  strcat (cmdLine, "\" ");
   strcat (cmdLine, jobString);
 
   /* Check for "logoption" */

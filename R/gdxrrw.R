@@ -147,10 +147,16 @@ rgdx.param <- function(gdxName, symName, names=NULL, compress=FALSE,
   }
 
   dflist <- list()
-  for (d in c(1:symDim)) {
-    nUels <- length(sym$uels[[d]])
-    # first arg to factor must be integer, not numeric: different as.character results
-    dflist[[d]] <- factor(as.integer(sym$val[,d]), seq(to=nUels), labels=sym$uels[[d]])
+  if (0 == dim(sym$val)[1]) {           # empty symbol - no elements
+    for (d in c(1:symDim)) {
+      dflist[[d]] <- factor(numeric(0))
+    }
+  } else {
+    for (d in c(1:symDim)) {
+      nUels <- length(sym$uels[[d]])
+      # first arg to factor must be integer, not numeric: different as.character results
+      dflist[[d]] <- factor(as.integer(sym$val[,d]), seq(to=nUels), labels=sym$uels[[d]])
+    }
   }
   dflist[[symDim+1]] <- sym$val[,symDim+1]
   names(dflist) <- fnames
@@ -299,10 +305,16 @@ rgdx.set <- function(gdxName, symName, names=NULL, compress=FALSE,
   }
 
   dflist <- list()
-  for (d in c(1:symDim)) {
-    nUels <- length(sym$uels[[d]])
-    # first arg to factor must be integer, not numeric: different as.character results
-    dflist[[d]] <- factor(as.integer(sym$val[,d]), seq(to=nUels), labels=sym$uels[[d]])
+    if (0 == dim(sym$val)[1]) {           # empty symbol - no elements
+    for (d in c(1:symDim)) {
+      dflist[[d]] <- factor(numeric(0))
+    }
+  } else {
+    for (d in c(1:symDim)) {
+      nUels <- length(sym$uels[[d]])
+      # first arg to factor must be integer, not numeric: different as.character results
+      dflist[[d]] <- factor(as.integer(sym$val[,d]), seq(to=nUels), labels=sym$uels[[d]])
+      }
   }
   if (te) {
     dflist[[symDim+1]] <- sym$te

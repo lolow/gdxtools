@@ -4,9 +4,18 @@
 \alias{write.gdx}
 \title{Write a list of parameters in a gdx (old version which uses a temporary gams file)}
 \usage{
-write.gdx(file, params = list(), vars_l = list(), vars_lo = list(),
-  vars_up = list(), sets = list(), removeLST = T, usetempdir = T,
-  digits = 16, compress = F)
+write.gdx(
+  file,
+  params = list(),
+  vars_l = list(),
+  vars_lo = list(),
+  vars_up = list(),
+  sets = list(),
+  removeLST = T,
+  usetempdir = T,
+  digits = 16,
+  compress = F
+)
 }
 \arguments{
 \item{file}{the filename of the gdx to save}

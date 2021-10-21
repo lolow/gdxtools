@@ -1,6 +1,6 @@
 /* globals.h
  * Global #defines, typedefs, and (gasp!) data for gdxrrw
- * $Id: globals.h 52395 2015-06-09 04:33:03Z sdirkse $
+ * $Id: globals.h 68225 2019-09-27 22:39:44Z sdirkse $
  */
 
 #if ! defined(_GDXRRW_GLOBALS_H_)
@@ -13,7 +13,6 @@
 # include <sys/wait.h>
 #endif
 
-#define INVENT_SET_TEXT_DEFAULT NA_LOGICAL
 #define LINELEN 1024
 #define MAX_STRING 128
 #if defined(__linux__) && defined(__x86_64)
