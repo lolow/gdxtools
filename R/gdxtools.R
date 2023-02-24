@@ -7,8 +7,8 @@ NULL
 
 .onAttach <- function(libname, pkgname) {
   if (!interactive()) return()
-  packageStartupMessage(paste("gdxtools",utils::packageVersion("gdxtools")))
-  if(Sys.info()[['sysname']]=='Windows'){
+  packageStartupMessage(paste("gdxtools", utils::packageVersion("gdxtools")))
+  if (Sys.info()[["sysname"]] == 'Windows'){
     gamsname = 'gams.exe'
   } else {
     gamsname = 'gams'
@@ -48,15 +48,15 @@ NULL
 #'     allparam <- batch_extract("myparam",files=myfiles)
 #'   }
 #' @export
-batch_extract <- function(items,files=NULL,gdxs=NULL){
+batch_extract <- function(items,files=NULL,gdxs=NULL,...){
   if(is.null(gdxs)){
-    gdxs = lapply(files, gdx)
+    gdxs <- lapply(files, gdx)
   }
   lall = list()
   for(item in items){
-    tt = lapply(gdxs,extract,item,addgdx=T)
-    tt = do.call("rbind",tt)
-    tt = list(tt)
+    tt <- lapply(gdxs,extract,item,addgdx=T,...)
+    tt <- do.call("rbind",tt)
+    tt <- list(tt)
     names(tt) <- item
     lall <- c(lall,tt)
   }

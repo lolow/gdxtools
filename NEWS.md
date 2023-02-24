@@ -1,3 +1,8 @@
+# gdxtools 0.7.1
+
+* Code cleaning 
+* batch_extract allows now for with extra arguments for extract
+
 # gdxtools 0.7.0
 
 * Includes gdxrrw 1.0.8
