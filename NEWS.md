@@ -1,3 +1,7 @@
+# gdxtools 0.8.0
+
+* use Gams Transfert when available (GAMS>41)
+
 # gdxtools 0.7.1
 
 * Code cleaning 
