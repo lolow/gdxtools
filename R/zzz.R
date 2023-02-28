@@ -1,3 +1,11 @@
+
+# Launched first: (gdxtools::gdx)
+.onLoad <- function(libname, pkgname) {
+  # Check if GAMStransfer is installed
+  options(gdxtools.gamstransfer = (system.file(package='gamstransfer') != ""))
+}
+
+# Launch with library(gdxtools)
 .onAttach <- function(libname, pkgname) {
 
   if (!interactive()) return()
@@ -10,12 +18,11 @@
   } else {
     options(gdxtools.gamsname = 'gams')
   }
-  gname <- getOption("gdxtoools.gamsname")
-
-  # Check if GAMStransfer is installed
-  options(gdxtools.gamstransfer = (system.file(package='gamstrsanfert') != ""))
+  gname <- getOption("gdxtools.gamsname")
 
   if (!getOption("gdxtools.gamstransfer")) {
+
+    packageStartupMessage("Using GDXRRW.")
 
     # Try to find GAMS path and load libraries
     .res <- ''
@@ -44,10 +51,21 @@
     if ( .res != "" ) {
       res <- system2(file.path(.res, gname),
                      stdout = TRUE, stderr = FALSE)
-      print(res)
+      idx <- which(grepl("GAMS Release     :",res))
+      if (length(idx) == 1) {
+        gams_ver <- regmatches(res[idx],regexpr("[0-9]+",res[idx]))
+        if (as.numeric(gams_ver) >= 41) {
+          packageStartupMessage(paste0("Since GAMS 41, GDXRRW is deprecated, ",
+                                       "gdxtools should use GAMS Transfert R."))
+          packageStartupMessage("Please install it with:")
+          packageStartupMessage(paste0("install.packages(\"",file.path(.res,
+                    "apifiles/R/gamstransfer/source/gamstransfer_r.tar.gz\""),
+                    ", dependencies=TRUE)"))
+        }
+      }
     }
+  } else {
+    packageStartupMessage("Using GAMS Transfert R.")
   }
-
-
 
 }
