@@ -17,9 +17,8 @@ all_items <- function(x, ...) {
 #'  }
 #'
 all_items.gdx <- function(x, ...) {
-  info = gdxInfo(x$filename, dump = F, returnList = T)
-  return(list(variables = info[["variables"]],
-              parameters = info[["parameters"]],
-              sets = info[["sets"]],
-              equations = info[["equations"]]))
+  return(list(variables = x$variables,
+              parameters = x$parameters,
+              sets = x$sets,
+              equations = x$equations))
 }

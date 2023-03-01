@@ -1,25 +1,3 @@
-#' Extract data from a gdx
-#'
-#' @export
-extract <- function(x, ...) {
-    UseMethod("extract", x)
-}
-
-#' Extract data from a gdx
-#'
-#' @author Laurent Drouet
-#' @examples
-#'
-#'   \dontrun{
-#'     mygdx <- gdx('results.gdx')
-#'     travel_cost <- mygdx["travel_cost"]
-#'   }
-#' @export
-`[.gdx` <- function(x, ...) {
-    extract.gdx(x, ...)
-}
-
-
 #' Extract parameter or variable data from the gdx file
 #'
 #' @export
@@ -38,10 +16,7 @@ extract <- function(x, ...) {
 #'     travel_cost <- extract(mygdx,"travel_cost")
 #'  }
 #'
-extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
-  if (!getOption("gdxtools.gamstransfer")) {
-    return(extract_gdxrrw.gdx(x, item, field, addgdx, ...))
-  }
+extract_gdxrrw.gdx <- function(x, item, field = "l", addgdx = F, ...) {
   text = ""
   if(item %in% x$variables$name){
     res = rgdx(x$filename, list(name = item, field = field), squeeze = F)

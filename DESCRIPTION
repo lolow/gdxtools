@@ -13,6 +13,6 @@ URL: https://github.com/lolow/gdxtools
 LazyData: FALSE
 Suggests:
     testthat
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 LinkingTo: Rcpp
 Imports: Rcpp
