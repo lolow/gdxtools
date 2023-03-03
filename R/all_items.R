@@ -17,8 +17,8 @@ all_items <- function(x, ...) {
 #'  }
 #'
 all_items.gdx <- function(x, ...) {
-  return(list(variables = x$variables,
-              parameters = x$parameters,
-              sets = x$sets,
-              equations = x$equations))
+  return(list(variables = x$variables$name,
+              parameters = x$parameters$name,
+              sets = x$sets$name,
+              equations = x$equations$name))
 }

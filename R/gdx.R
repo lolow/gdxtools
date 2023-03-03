@@ -15,15 +15,12 @@ gdx <- function(filename, ...) {
     m <- gamstransfer::ConstContainer$new()
     m$read(filename, records = FALSE)
     return(structure(list(filename = filename,
-                          sets = m$listSets(),
-                          parameters = m$listParameters(),
-                          variables = m$listVariables(),
-                          equations = m$listEquations(),
-                          aliases = m$listAliases(),
-                          symCount = length(unique(c(m$listParameters(),
-                                                     m$listVariables(),
-                                                     m$listEquations(),
-                                                     m$listAliases()))),
+                          sets = data.frame(name = m$listSets()),
+                          parameters = data.frame(name = m$listParameters()),
+                          variables = data.frame(name = m$listVariables()),
+                          equations = data.frame(name = m$listEquations()),
+                          aliases = data.frame(name = m$listAliases()),
+                          symCount = length(m$listSymbols()),
                           container = m,
                           ...), class = "gdx"))
   }else{

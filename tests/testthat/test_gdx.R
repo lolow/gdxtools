@@ -1,7 +1,10 @@
 library(gdxtools)
 igdx(dirname(Sys.which('gams')))
 
-context("gdx reading")
+#options(gdxtools.gamstransfer = (system.file(package='gamstransfer') != ""))
+options(gdxtools.gamstransfer = FALSE)
+
+context("gdx definition")
 
 test_that("define a gdx", {
   expect_warning(gdx('not_existing.gdx'))
@@ -9,9 +12,11 @@ test_that("define a gdx", {
 
 g = gdx('ampl.gdx')
 
-#test_that("get printed", {
-#  expect_equal(,)
-#})
+test_that("Print gdx information", {
+  expect_output(print(g), "<gdx: ampl.gdx, 18 symbols>")
+})
+
+context("gdx reading")
 
 test_that("get information", {
   expect_equal(all_items(g)$variables,c("x","s","profit"))
@@ -60,9 +65,11 @@ write.gdx("out_var.gdx",
           vars_up = vars_upper)
 gv = gdx('out_var.gdx')
 
+library(dplyr, warn.conflicts = FALSE)
+
 test_that("write_gdx", {
   expect_equal(gp["b"],g["b"])
-  expect_equal(gp["c"]$value,g["c"][order(g["c"]$p),]$value)
+  expect_equal(gp["c"],g["c"])
   expect_equal(gp["d"],g["d"])
   expect_equal(gv["b"],g["b"])
   expect_equal(gv["c"],g["c"])
@@ -97,9 +104,10 @@ file.remove("test.gdx")
 
 test_that("write_gdx sets", {
 
-myset1 = data.frame(`*`=c('london','paris','tahiti'))
-myset2 = data.frame(`*`=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
-write.gdx("test.gdx",sets=list(city=myset1,road=myset2))
+myset1 = data.frame(`*` = c('london','paris','tahiti'))
+myset2 = data.frame(`*` = c('london','paris','tahiti'),
+                      b = c('tahiti','tahiti','paris'))
+write.gdx("test.gdx", sets = list(city = myset1, road = myset2))
 
 expect_true(file.exists("test.gdx"))
 
