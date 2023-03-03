@@ -43,16 +43,18 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
     return(extract_gdxrrw.gdx(x, item, field, addgdx, ...))
   }
   text = ""
-  if(item %in% x$variables$name){
-    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    #TODO text is not existing
-    #if("text" %in% colnames(x$variables)) text = x$variables$text[item==x$variables$name]
-  } else if(item %in% x$equations$name){
-    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    if("text" %in% colnames(x$equations)) text = x$equations$text[item==x$equations$name]
-  } else if(item %in% x$parameters$name){
-    res = rgdx(x$filename, list(name = item), squeeze = F)
-    if("text" %in% colnames(x$parameters)) text = x$parameters$text[item==x$parameters$name]
+  m <- gamstransfer::ConstContainer$new()
+  m$read(x$filename, records = FALSE)
+  if(item %in% c(m$listVariables(),m$listEquations(),m$listParameters())){
+    m$read(x$filename, symbols = item)
+    res <- m$data[[item]]$records
+    if ("level" %in% colnames(res)) {
+      var_cols <- c(l = "level", m = "marginal", lo = "lower", up = "upper", sc = "scale")
+      res <- res[, !(names(res) %in% var_cols[names(var_cols) != field])]
+      colnames(res)[which(colnames(res)==var_cols[field])] <- "value"
+    }
+    not_value <- which(colnames(res)!="value")
+    colnames(res)[not_value] <- gsub("_\\d+$","",colnames(res)[not_value])
   } else if(item %in% x$sets$name){
     res = rgdx(x$filename, list(name = item), squeeze = F)
     if("text" %in% colnames(x$sets)) text = x$sets$text[item==x$sets$name]
@@ -60,25 +62,7 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
     warning("item not found")
     return(NULL)
   }
-  if (res$dim == 0) {
-    df = data.frame(value=res$val[,res$dim+1])
-  } else {
-    ldf = list()
-    for (i in 1:res$dim) {
-      if (res$domains[i] == "*") {
-        colname = paste("V", i, sep = "")
-      } else {
-        colname = res$domains[i]
-      }
-      l = list(res$uels[[i]][res$val[, i]])
-      names(l) = colname
-      ldf = c(ldf,l)
-    }
-    df = data.frame(ldf,stringsAsFactors=F)
-    if(!res$type %in% c("set")){
-      df$value = res$val[, res$dim + 1]
-    }
-  }
+  df <- data.frame(res,stringsAsFactors=F)
   if (addgdx){
     if(nrow(df)==0){
       df$gdx = character()
@@ -86,6 +70,6 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
       df$gdx = x$filename
     }
   }
-  attributes(df) = c(attributes(df),gams=text)
+  attributes(df) = c(attributes(df), gams = text)
   return(df)
 }

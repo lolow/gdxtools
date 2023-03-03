@@ -31,5 +31,14 @@ gdx <- function(filename, ...) {
 
 #' @export
 print.gdx <- function(x, ...) {
-    cat("<gdx: ", x$filename, ", ", x$symCount," symbol",ifelse(x$symCount>1,"s",""),">\n", sep = "")
+    cat("<gdx: ",
+        x$filename,
+        ", ",
+        x$symCount,
+        " symbol",
+        ifelse(x$symCount>1,"s",""),
+        ", ",
+        ifelse("container" %in% names(x), "GAMS transfert R", "gdxrrw"),
+        ">\n",
+        sep = "")
 }
