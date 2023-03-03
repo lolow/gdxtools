@@ -29,6 +29,7 @@ test_that("get data on variable", {
   expect_equal(unique(g["x"]$p),c("nuts","bolts","washers"))
   expect_true(is.numeric(g["x","m"]$value))
   expect_equal(sum(g["x","lo"]$value),0)
+  expect_equal(g["profit"]$value,79.34129,tolerance = 1e-5)
   expect_true(is.infinite(g["x","up"]$value[1]))
 })
 
@@ -47,14 +48,16 @@ test_that("get data on sets", {
   expect_true(is.character(g["p"][,1]))
 })
 
+igdx(dirname(Sys.which('gams')))
+
 context("GAMS tranfert R - gdx writing")
 
 params = list(b=g["b"],c=g["c"],d=g["d"],
               e=data.frame(id=c("with space","with.dot"),value=c(133,233)))
-write.gdx("out_param.gdx",params=params)
+write.gdx("out_param.gdx", params = params)
 gp = gdx('out_param.gdx')
 
-vars = list(x=g["x"],s=g["s"],profit=g["profit"])
+vars = list(x= g["x"],s= g["s"], profit=g["profit"])
 vars_lower = list(x=g["x",field="lo"],s=g["s","lo"],profit=g["profit","lo"])
 vars_upper = list(x=g["x",field="up"],s=g["s","up"],profit=g["profit","up"])
 write.gdx("out_var.gdx",
@@ -127,7 +130,7 @@ g = gdx('ampl.gdx')
 print(g)
 
 test_that("Print gdx information", {
-  expect_output(print(g), "<gdx: ampl.gdx, 18 symbols, GAMS transfert R>")
+  expect_output(print(g), "<gdx: ampl.gdx, 18 symbols, gdxrrw>")
 })
 
 context("GDXXRW - gdx reading")

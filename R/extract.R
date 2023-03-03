@@ -44,23 +44,25 @@ extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
   }
   text = ""
   m <- gamstransfer::ConstContainer$new()
-  m$read(x$filename, records = FALSE)
-  if(item %in% c(m$listVariables(),m$listEquations(),m$listParameters())){
-    m$read(x$filename, symbols = item)
-    res <- m$data[[item]]$records
+  m$read(x$filename, symbols = item)
+  res <- m$data[[item]]$records
+  # Is it a set?
+  if ("element_text" %in% colnames(res)) {
+    res <- subset(res, select=-element_text)
+    colnames(res) <- paste0("V",1:length(colnames(res)))
+  } else {
+    # Is it a variable or an equation?
     if ("level" %in% colnames(res)) {
       var_cols <- c(l = "level", m = "marginal", lo = "lower", up = "upper", sc = "scale")
       res <- res[, !(names(res) %in% var_cols[names(var_cols) != field])]
-      colnames(res)[which(colnames(res)==var_cols[field])] <- "value"
+      if (is.numeric(res)) {
+        res <- data.frame(value=res)
+      } else {
+        colnames(res)[which(colnames(res)==var_cols[field])] <- "value"
+      }
     }
     not_value <- which(colnames(res)!="value")
     colnames(res)[not_value] <- gsub("_\\d+$","",colnames(res)[not_value])
-  } else if(item %in% x$sets$name){
-    res = rgdx(x$filename, list(name = item), squeeze = F)
-    if("text" %in% colnames(x$sets)) text = x$sets$text[item==x$sets$name]
-  } else {
-    warning("item not found")
-    return(NULL)
   }
   df <- data.frame(res,stringsAsFactors=F)
   if (addgdx){
