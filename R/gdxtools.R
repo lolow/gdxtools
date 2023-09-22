@@ -2,6 +2,8 @@
 #'
 #' @name gdxtools
 #' @docType package
+#' @description
+#' Get info on GDX files (GAMS database exchange files) and convert parameters and variables data into data.frame.
 #'
 NULL
 
@@ -228,9 +230,15 @@ write.gdx <- function(file, params=list(),
     }
   }
   concatenate2 <- function(row, len, vname, vext) {
-    paste0(vname,vext,"(",
-           paste(paste0("'",trimws(row[1:len]),"'"),collapse=","),
-           ")=",row[len+1],";")
+    if (len == 1) {
+      sprintf(paste0(vname,vext,"(%s)=%s;"),
+              paste0("'",row[,1],"'"),
+              row[,len+1])
+    } else {
+      sprintf(paste0(vname,vext,"(%s)=%s;"),
+              paste0("'",apply(row[,1:len], 1, function(x) paste(x, collapse = "','")),"'"),
+              row[,len+1])
+    }
   }
   for(i in seq_along(vars_l)){
     v = vars_l[[i]]
@@ -241,10 +249,11 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_l)[i], vext=".l"), fgms)
+        writeLines(concatenate2(v, len=length(indices), vname=names(vars_l)[i], vext=".l"), fgms)
       }
     }
   }
+
   for(i in seq_along(vars_lo)){
     v = vars_lo[[i]]
     v = subset(v,!is.infinite(value))
@@ -254,7 +263,7 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_lo)[i], vext=".lo"), fgms)
+        writeLines(concatenate2(v, len=length(indices), vname=names(vars_lo)[i], vext=".lo"), fgms)
       }
     }
   }
@@ -267,7 +276,7 @@ write.gdx <- function(file, params=list(),
       } else {
         indices = subset(colnames(v), colnames(v) != "value")
         v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(apply(v,1,concatenate2, len=length(indices), vname=names(vars_up)[i], vext=".up"), fgms)
+        writeLines(concatenate2(v, len=length(indices), vname=names(vars_up)[i], vext=".up"), fgms)
       }
     }
   }
