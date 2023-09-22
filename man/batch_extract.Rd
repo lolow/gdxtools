@@ -4,7 +4,7 @@
 \alias{batch_extract}
 \title{Extract a list of items from many GDX}
 \usage{
-batch_extract(items, files = NULL, gdxs = NULL)
+batch_extract(items, files = NULL, gdxs = NULL, ...)
 }
 \arguments{
 \item{items}{vector or list of items to extract}

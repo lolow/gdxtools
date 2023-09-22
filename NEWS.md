@@ -2,6 +2,7 @@
 
 * Code cleaning 
 * batch_extract allows now for with extra arguments for extract
+* Faster write.gdx with variables
 
 # gdxtools 0.7.0
 

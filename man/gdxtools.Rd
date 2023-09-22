@@ -4,3 +4,6 @@
 \name{gdxtools}
 \alias{gdxtools}
 \title{gdxtools}
+\description{
+Get info on GDX files (GAMS database exchange files) and convert parameters and variables data into data.frame.
+}
