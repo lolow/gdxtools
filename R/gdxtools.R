@@ -148,20 +148,26 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   }
 
   # Variables — same domain logic as parameters, with level/lower/upper merged
-  # on the union of provided indices.
+  # on the union of provided indices. Empty input still writes a declaration
+  # of the right dimension (matching legacy behavior).
   vnames <- unique(c(names(vars_l), names(vars_lo), names(vars_up)))
   vnames <- vnames[!is.na(vnames) & vnames != ""]
   for (vn in vnames) {
     rec <- .merge_var_records(vars_l[[vn]], vars_lo[[vn]], vars_up[[vn]])
-    if (is.null(rec) || nrow(rec) == 0) next
+    if (is.null(rec)) next
     description_ref <- vars_l[[vn]]
     if (is.null(description_ref)) description_ref <- vars_lo[[vn]]
     if (is.null(description_ref)) description_ref <- vars_up[[vn]]
     desc <- .text_attr(description_ref)
     val_cols_present <- intersect(c("level", "lower", "upper"), names(rec))
-    idx_cols <- setdiff(names(rec), val_cols_present)
-    dim <- length(idx_cols)
+    # Index columns sit after the user's index data and may legitimately share
+    # names (e.g. "*","*"); use position to separate them from level/lower/upper.
+    val_idxs <- which(names(rec) %in% val_cols_present)
+    idx_idxs <- setdiff(seq_len(ncol(rec)), val_idxs)
+    idx_cols <- names(rec)[idx_idxs]
+    dim <- length(idx_idxs)
     if (dim == 0) {
+      if (nrow(rec) == 0) next  # scalar with nothing to write
       m$addVariable(vn, "free",
                     records = as.data.frame(rec[1, val_cols_present, drop = FALSE]),
                     description = desc)

@@ -250,6 +250,21 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
+test_that("empty variables are written as a declaration of the right dim", {
+  # Empty input previously got silently dropped; legacy declared the
+  # variable in the GDX even when no records were provided.
+  empty_v <- data.frame(check.names = FALSE,
+                        a = character(0), b = character(0),
+                        value = numeric(0))
+  names(empty_v) <- c("*", "*", "value")
+  write.gdx("out_empty_var.gdx", vars_l = list(CPRICE = empty_v))
+  g <- gdx("out_empty_var.gdx")
+  expect_true("CPRICE" %in% g$variables$name)
+  expect_equal(g$variables$dim[g$variables$name == "CPRICE"], 2L)
+  expect_equal(nrow(g["CPRICE"]), 0L)
+  file.remove("out_empty_var.gdx")
+})
+
 test_that("write.gdx accepts +Inf upper bounds", {
   vu <- data.frame(i = c("a", "b"), value = c(Inf, Inf))
   vl <- data.frame(i = c("a", "b"), value = c(0, 0))
