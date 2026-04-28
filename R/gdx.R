@@ -17,7 +17,18 @@ gdx <- function(filename, ...) {
     warning(paste(filename, "does not exist!"))
     return(structure(list(filename = filename, ...), class = "gdx"))
   }
-  m <- gamstransfer::Container$new(filename)
+  # gamstransfer warns once per call when a GDX contains GAMS acronyms
+  # (which it converts to NA). The warning is informational and there is
+  # no remediation for it on the R side, so we filter it out here while
+  # letting any other warning through.
+  m <- withCallingHandlers(
+    gamstransfer::Container$new(filename),
+    warning = function(w) {
+      if (grepl("acronym", conditionMessage(w), ignore.case = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
 
   describe <- function(names_vec) {
     if (length(names_vec) == 0) {
