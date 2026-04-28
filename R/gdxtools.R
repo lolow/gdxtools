@@ -156,7 +156,10 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       p[[v_idx]] <- as.numeric(p[[v_idx]])
       records <- p[, c(idx_idxs, v_idx), drop = FALSE]
       names(records) <- c(make.unique(idx_cols), "value")
-      records <- records[records$value != 0, , drop = FALSE]
+      # Drop NA-value rows along with zeros (matches legacy subset() semantics
+      # and avoids tripping the NA-index guard with all-NA logical indexing).
+      keep <- !is.na(records$value) & records$value != 0
+      records <- records[keep, , drop = FALSE]
       .check_index_na(records, seq_along(idx_cols), name, "parameter")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addParameter(name, domains, records = records,

@@ -250,6 +250,15 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
+test_that("NA / NaN values are silently dropped, like legacy subset()", {
+  p <- data.frame(i = c("a", "b", "c", "d"),
+                  value = c(1, NA, NaN, 4))
+  write.gdx("out_na_val.gdx", params = list(p = p))
+  g <- gdx("out_na_val.gdx")
+  expect_equal(sort(g["p"]$value), c(1, 4))
+  file.remove("out_na_val.gdx")
+})
+
 test_that("NA in an index column raises an informative error (no SIGABRT)", {
   # gamstransfer's C++ layer aborts the R process with SIGABRT when an index
   # value is NA — guard against that with a pre-flight check.
