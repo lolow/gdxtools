@@ -100,6 +100,21 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   })
 }
 
+# Guard against NAs in index columns — gamstransfer's underlying C++ aborts
+# with an out-of-bounds vector access when any index value is NA, which
+# crashes the R session (SIGABRT) rather than throwing a recoverable error.
+# Pre-validate so the user gets an informative message instead.
+.check_index_na <- function(records, idx_idxs, sym_name, sym_kind) {
+  for (j in idx_idxs) {
+    if (anyNA(records[[j]])) {
+      stop(sprintf(
+        "%s '%s': index column '%s' contains NA values; gamstransfer cannot encode NA UELs",
+        sym_kind, sym_name, names(records)[j]
+      ), call. = FALSE)
+    }
+  }
+}
+
 # Common writer used by both write.gdx and write2.gdx.
 .write_container <- function(file, params, vars_l, vars_lo, vars_up, sets, compress) {
   m <- gamstransfer::Container$new()
@@ -114,6 +129,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     s <- as.data.frame(sets[[i]])
     dim <- ncol(s)
     for (j in seq_len(dim)) s[[j]] <- as.character(s[[j]])
+    .check_index_na(s, seq_len(dim), name, "set")
     if (m$hasSymbols(name)) m$removeSymbols(name)
     m$addSet(name, rep("*", dim), records = s,
              description = .text_attr(sets[[i]]))
@@ -141,6 +157,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       records <- p[, c(idx_idxs, v_idx), drop = FALSE]
       names(records) <- c(make.unique(idx_cols), "value")
       records <- records[records$value != 0, , drop = FALSE]
+      .check_index_na(records, seq_along(idx_cols), name, "parameter")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addParameter(name, domains, records = records,
                      description = .text_attr(params[[i]]))
@@ -172,6 +189,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
                     records = as.data.frame(rec[1, val_cols_present, drop = FALSE]),
                     description = desc)
     } else {
+      .check_index_na(rec, idx_idxs, vn, "variable")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addVariable(vn, "free", domains, records = rec, description = desc)
     }

@@ -250,6 +250,28 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
+test_that("NA in an index column raises an informative error (no SIGABRT)", {
+  # gamstransfer's C++ layer aborts the R process with SIGABRT when an index
+  # value is NA — guard against that with a pre-flight check.
+  bad_par <- data.frame(i = c("a", NA, "c"), value = c(1, 2, 3))
+  expect_error(
+    write.gdx("out_na_par.gdx", params = list(p = bad_par)),
+    "NA values"
+  )
+
+  bad_var <- data.frame(i = c("a", "b", NA), value = c(1, 2, 3))
+  expect_error(
+    write.gdx("out_na_var.gdx", vars_l = list(v = bad_var)),
+    "NA values"
+  )
+
+  bad_set <- data.frame(i = c("a", NA))
+  expect_error(
+    write.gdx("out_na_set.gdx", sets = list(s = bad_set)),
+    "NA values"
+  )
+})
+
 test_that("empty variables are written as a declaration of the right dim", {
   # Empty input previously got silently dropped; legacy declared the
   # variable in the GDX even when no records were provided.
