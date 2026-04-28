@@ -163,6 +163,18 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       keep <- is.na(records$value) | records$value != 0
       records <- records[keep, , drop = FALSE]
       .check_index_na(records, seq_along(idx_cols), name, "parameter")
+      # Resolve duplicate keys with last-wins semantics, matching the legacy
+      # GAMS-process behavior (gamstransfer otherwise rejects duplicates).
+      if (nrow(records) > 0L) {
+        idx_only <- records[, seq_along(idx_cols), drop = FALSE]
+        dup <- duplicated(idx_only, fromLast = TRUE)
+        if (any(dup)) {
+          warning(sprintf(
+            "parameter '%s': %d duplicate key row(s) collapsed (last value kept)",
+            name, sum(dup)), call. = FALSE)
+          records <- records[!dup, , drop = FALSE]
+        }
+      }
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addParameter(name, domains, records = records,
                      description = .text_attr(params[[i]]))
@@ -195,6 +207,16 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
                     description = desc)
     } else {
       .check_index_na(rec, idx_idxs, vn, "variable")
+      if (nrow(rec) > 0L) {
+        idx_only <- rec[, idx_idxs, drop = FALSE]
+        dup <- duplicated(idx_only, fromLast = TRUE)
+        if (any(dup)) {
+          warning(sprintf(
+            "variable '%s': %d duplicate key row(s) collapsed (last value kept)",
+            vn, sum(dup)), call. = FALSE)
+          rec <- rec[!dup, , drop = FALSE]
+        }
+      }
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addVariable(vn, "free", domains, records = rec, description = desc)
     }

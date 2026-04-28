@@ -264,6 +264,20 @@ test_that("NA / NaN values are preserved (mapped to GAMS NA)", {
   file.remove("out_na_val.gdx")
 })
 
+test_that("duplicate keys are collapsed last-wins with a warning", {
+  p <- data.frame(i = c("a", "a", "b", "c", "c", "c"),
+                  value = c(1, 2, 3, 4, 5, 6))
+  expect_warning(
+    write.gdx("out_dup.gdx", params = list(p = p)),
+    "3 duplicate key row\\(s\\)"
+  )
+  g <- gdx("out_dup.gdx")
+  out <- g["p"][order(g["p"]$i), ]
+  expect_equal(out$i, c("a", "b", "c"))
+  expect_equal(out$value, c(2, 3, 6))      # last value per key
+  file.remove("out_dup.gdx")
+})
+
 test_that("zero values are still dropped (legacy semantic)", {
   p <- data.frame(i = c("a", "b", "c"), value = c(0, 1, 0))
   write.gdx("out_zero.gdx", params = list(p = p))
