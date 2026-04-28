@@ -250,10 +250,13 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
-test_that("NA / NaN values are silently dropped, like legacy subset()", {
+test_that("NA / NaN values are dropped with a warning", {
   p <- data.frame(i = c("a", "b", "c", "d"),
                   value = c(1, NA, NaN, 4))
-  write.gdx("out_na_val.gdx", params = list(p = p))
+  expect_warning(
+    write.gdx("out_na_val.gdx", params = list(p = p)),
+    "dropping 2 row\\(s\\) with NA/NaN value"
+  )
   g <- gdx("out_na_val.gdx")
   expect_equal(sort(g["p"]$value), c(1, 4))
   file.remove("out_na_val.gdx")
