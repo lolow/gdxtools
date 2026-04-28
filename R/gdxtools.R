@@ -156,14 +156,11 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       p[[v_idx]] <- as.numeric(p[[v_idx]])
       records <- p[, c(idx_idxs, v_idx), drop = FALSE]
       names(records) <- c(make.unique(idx_cols), "value")
-      # Drop NA-value rows along with zeros (matches legacy subset() semantics
-      # and avoids tripping the NA-index guard with all-NA logical indexing).
-      na_mask <- is.na(records$value)
-      if (any(na_mask)) {
-        warning(sprintf("parameter '%s': dropping %d row(s) with NA/NaN value",
-                        name, sum(na_mask)), call. = FALSE)
-      }
-      keep <- !na_mask & records$value != 0
+      # Drop zero rows (matches legacy `subset(p, value != 0)`) but keep
+      # NA / NaN values — those map to GAMS NA / undef in the GDX. Use
+      # `is.na | x != 0` rather than `x != 0` directly so NA logicals don't
+      # leak into indexing and produce all-NA rows.
+      keep <- is.na(records$value) | records$value != 0
       records <- records[keep, , drop = FALSE]
       .check_index_na(records, seq_along(idx_cols), name, "parameter")
       domains <- .domain_for(m, idx_cols, explicit_set_names)

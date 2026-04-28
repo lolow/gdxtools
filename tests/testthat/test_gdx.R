@@ -250,16 +250,27 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
-test_that("NA / NaN values are dropped with a warning", {
+test_that("NA / NaN values are preserved (mapped to GAMS NA)", {
   p <- data.frame(i = c("a", "b", "c", "d"),
                   value = c(1, NA, NaN, 4))
-  expect_warning(
-    write.gdx("out_na_val.gdx", params = list(p = p)),
-    "dropping 2 row\\(s\\) with NA/NaN value"
-  )
+  expect_silent(write.gdx("out_na_val.gdx", params = list(p = p)))
   g <- gdx("out_na_val.gdx")
-  expect_equal(sort(g["p"]$value), c(1, 4))
+  out <- g["p"][order(g["p"]$i), ]
+  expect_equal(out$i, c("a", "b", "c", "d"))
+  expect_equal(out$value[1], 1)
+  expect_equal(out$value[4], 4)
+  expect_true(is.na(out$value[2]) || is.nan(out$value[2]))
+  expect_true(is.na(out$value[3]) || is.nan(out$value[3]))
   file.remove("out_na_val.gdx")
+})
+
+test_that("zero values are still dropped (legacy semantic)", {
+  p <- data.frame(i = c("a", "b", "c"), value = c(0, 1, 0))
+  write.gdx("out_zero.gdx", params = list(p = p))
+  g <- gdx("out_zero.gdx")
+  expect_equal(g["p"]$i, "b")
+  expect_equal(g["p"]$value, 1)
+  file.remove("out_zero.gdx")
 })
 
 test_that("NA in an index column raises an informative error (no SIGABRT)", {
