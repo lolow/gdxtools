@@ -1,15 +1,20 @@
 Package: gdxtools
 Title: Manipulate GDX files in R
 Type: Package
-Version: 0.7.1
-Date: 2021-10-21
-SystemRequirements: GAMS (>= 24.2.1)
-Authors@R: c(person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@gmail.com"), 
+Version: 1.0.0
+Date: 2026-04-28
+SystemRequirements: GAMS (>= 24.2.1) is only required if you call gams()
+Authors@R: c(person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@gmail.com"),
            person("Steve","Dirkse", role=c("cph")))
-Description: Get info on GDX files (GAMS database exchange files) and convert parameters and variables data into data.frame.
+Description: Read and write GDX files (GAMS database exchange) and convert
+    parameters, sets and variables to data.frames. Backed by the
+    GAMS-maintained gamstransfer package; no compiled code is shipped.
 License: EPL
 URL: https://github.com/lolow/gdxtools
+Imports:
+    gamstransfer
 Suggests:
-    testthat
-RoxygenNote: 7.2.3
+    testthat,
+    microbenchmark
+RoxygenNote: 7.3.3
 Encoding: UTF-8

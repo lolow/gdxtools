@@ -1,3 +1,26 @@
+# gdxtools 1.0.0
+
+## Major change — gamstransfer backend
+
+* The package is now backed by [gamstransfer](https://cran.r-project.org/package=gamstransfer),
+  the GDX I/O package maintained by GAMS Software GmbH. No compiled code
+  ships in this package any more (`src/` removed).
+* The high-level API is preserved: `gdx()`, `[.gdx`, `extract()`,
+  `all_items()`, `batch_extract()`, `write.gdx()`, `write2.gdx()`. Existing
+  user code calling these should not need changes.
+* `write.gdx()` no longer shells out to a GAMS process; the `removeLST`,
+  `usetempdir` and `digits` arguments are accepted for compatibility but
+  ignored. `compress = TRUE` still produces a compressed GDX.
+* `write2.gdx()` is now a thin alias of `write.gdx()` (both use the same
+  fast path).
+* `igdx()` and `gams()` are kept as thin compatibility shims (PATH-based
+  GAMS discovery + `system2` runner). The lower-level gdxrrw-shaped
+  exports `rgdx`, `wgdx`, `gdxInfo`, `rgdx.param`, `rgdx.set` and
+  `rgdx.scalar` have been removed.
+* Behavior change: extracting a sparse parameter no longer densifies the
+  result with explicit zeros. Only entries actually stored in the GDX are
+  returned. (Variables and equations are unaffected.)
+
 # gdxtools 0.7.1
 
 * Code cleaning 

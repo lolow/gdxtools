@@ -6,6 +6,11 @@
 \usage{
 all_items(x, ...)
 }
+\arguments{
+\item{x}{the gdx object}
+
+\item{...}{ignored}
+}
 \description{
 Return the list of all items
 }

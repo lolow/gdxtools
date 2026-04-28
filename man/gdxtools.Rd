@@ -2,8 +2,28 @@
 % Please edit documentation in R/gdxtools.R
 \docType{package}
 \name{gdxtools}
+\alias{gdxtools-package}
 \alias{gdxtools}
 \title{gdxtools}
 \description{
-Get info on GDX files (GAMS database exchange files) and convert parameters and variables data into data.frame.
+Read and write GDX files (GAMS database exchange) using the GAMS-maintained
+\code{gamstransfer} package as the underlying backend. Symbols are returned
+as plain data.frames with domain columns plus a \code{value} column,
+preserving the API of earlier (gdxrrw-backed) versions.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/lolow/gdxtools}
+}
+
+}
+\author{
+\strong{Maintainer}: Laurent Drouet \email{ldrouet@gmail.com}
+
+Other contributors:
+\itemize{
+  \item Steve Dirkse [copyright holder]
+}
+
 }

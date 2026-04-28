@@ -9,19 +9,20 @@ batch_extract(items, files = NULL, gdxs = NULL, ...)
 \arguments{
 \item{items}{vector or list of items to extract}
 
-\item{files}{list of files, if not defined gdxs should be defined}
+\item{files}{list of files; if \code{NULL}, \code{gdxs} must be supplied}
 
-\item{gdxs}{list of gdxs, if not defined files should be defined}
+\item{gdxs}{list of \code{gdx} objects; if \code{NULL}, \code{files} must be supplied}
+
+\item{...}{passed to \code{extract.gdx}}
 }
 \description{
 Extract a list of items from many GDX
 }
 \examples{
-
-  \dontrun{
-    myfiles = c("test1.gdx","test2.gdx")
-    allparam <- batch_extract("myparam",files=myfiles)
-  }
+ \dontrun{
+   myfiles  <- c("test1.gdx", "test2.gdx")
+   allparam <- batch_extract("myparam", files = myfiles)
+ }
 }
 \author{
 Laurent Drouet

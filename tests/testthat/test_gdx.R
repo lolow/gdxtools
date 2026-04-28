@@ -1,105 +1,215 @@
 library(gdxtools)
-igdx(dirname(Sys.which('gams')))
+
+# Sort a data.frame by all non-`value`/`gdx` columns. Used to compare
+# results without depending on internal row order, which is a backend choice.
+sort_by_keys <- function(df) {
+  if (nrow(df) == 0) return(df)
+  key_cols <- setdiff(names(df), c("value", "gdx"))
+  if (length(key_cols) == 0) return(df)
+  df[do.call(order, lapply(key_cols, function(k) df[[k]])), , drop = FALSE]
+}
 
 context("gdx reading")
 
-test_that("define a gdx", {
-  #expect_match(gdx('ampl.gdx'),"gdx")
-  expect_warning(gdx('not_existing.gdx'))
+test_that("gdx() warns on missing file but returns an object", {
+  expect_warning(g <- gdx("not_existing.gdx"))
+  expect_s3_class(g, "gdx")
 })
 
-g = gdx('ampl.gdx')
+g <- gdx("ampl.gdx")
 
-test_that("get information", {
-  expect_equal(all_items(g)$variables,c("x","s","profit"))
-  expect_equal(all_items(g)$equations,c("limit","balance","obj"))
-  expect_equal(all_items(g)$sets,c("p","r","tl","t","first","last"))
-  expect_equal(all_items(g)$parameters,c("b","d","f","m","a","c"))
+test_that("metadata is exposed via the gdx object", {
+  expect_equal(g$symCount, 18)
+  expect_equal(sort(g$variables$name),  sort(c("x", "s", "profit")))
+  expect_equal(sort(g$equations$name),  sort(c("limit", "balance", "obj")))
+  expect_equal(sort(g$parameters$name), sort(c("b", "d", "f", "m", "a", "c")))
+  expect_equal(sort(g$sets$name),
+               sort(c("p", "r", "tl", "t", "first", "last")))
 })
 
-test_that("get data on variable", {
-  expect_true(is.numeric(g["x"]$value))
-  expect_true(is.character(g["x"]$tl))
-  expect_equal(unique(g["x"]$p),c("nuts","bolts","washers"))
-  expect_true(is.numeric(g["x","m"]$value))
-  expect_equal(sum(g["x","lo"]$value),0)
-  expect_true(is.infinite(g["x","up"]$value[1]))
+test_that("all_items() returns lists of names by symbol type", {
+  ai <- all_items(g)
+  expect_equal(ai$variables,  c("x", "s", "profit"))
+  expect_equal(ai$equations,  c("limit", "balance", "obj"))
+  expect_equal(ai$sets,       c("p", "r", "tl", "t", "first", "last"))
+  expect_equal(ai$parameters, c("b", "d", "f", "m", "a", "c"))
 })
 
-test_that("get data on equations", {
+test_that("variable extraction returns domain columns + `value`", {
+  x <- g["x"]
+  expect_true(is.character(x$p))
+  expect_true(is.character(x$tl))
+  expect_true(is.numeric(x$value))
+  expect_equal(sort(unique(x$p)), sort(c("nuts", "bolts", "washers")))
+
+  expect_true(is.numeric(g["x", "m"]$value))
+  expect_equal(sum(g["x", "lo"]$value), 0)
+  expect_true(is.infinite(g["x", "up"]$value[1]))
+})
+
+test_that("equation extraction supports field=l/m/lo/up", {
   expect_true(is.numeric(g["limit"]$value))
-  expect_true(is.infinite(g["limit","lo"]$value[1]))
-  expect_equal(g["limit","up"]$value[1],123)
+  expect_true(is.infinite(g["limit", "lo"]$value[1]))
+  expect_equal(g["limit", "up"]$value[1], 123)
 })
 
-test_that("get data on sets", {
-  expect_true(is.character(g["p"][,1]))
+test_that("invalid field raises an error", {
+  expect_error(g["x", "bogus"], "invalid field")
 })
 
-test_that("get data on parameters", {
+test_that("sets return as character columns and no `value`", {
+  pset <- g["p"]
+  expect_true(is.character(pset[, 1]))
+  expect_false("value" %in% names(pset))
+})
+
+test_that("parameter extraction returns named domain + `value`", {
   expect_true(is.numeric(g["b"]$value))
-  expect_equal(names(g["b"]),c("r","value"))
+  expect_equal(names(g["b"]), c("r", "value"))
+})
+
+test_that("scalar parameters round-trip as a 1-row data.frame", {
+  m <- g["m"]
+  expect_equal(names(m), "value")
+  expect_equal(m$value, 123)
+})
+
+test_that("missing item triggers a warning and returns NULL", {
+  expect_warning(res <- g["does_not_exist"])
+  expect_null(res)
+})
+
+test_that("addgdx tags rows with the source filename", {
+  b_tagged <- g["b", addgdx = TRUE]
+  expect_true("gdx" %in% names(b_tagged))
+  expect_equal(unique(b_tagged$gdx), "ampl.gdx")
 })
 
 context("gdx writing")
 
-params = list(b=g["b"],c=g["c"],d=g["d"],
-              e=data.frame(id=c("with space","with.dot"),value=c(133,233)))
-write.gdx("out_param.gdx",params=params)
-gp = gdx('out_param.gdx')
+# Round-trip the parameters from the test gdx and confirm key/value parity.
+params_in <- list(
+  b = g["b"], c = g["c"], d = g["d"],
+  e = data.frame(id = c("with space", "with.dot"), value = c(133, 233))
+)
+write.gdx("out_param.gdx", params = params_in)
+gp <- gdx("out_param.gdx")
 
-vars = list(x=g["x"],s=g["s"],profit=g["profit"])
-vars_lower = list(x=g["x",field="lo"],s=g["s","lo"],profit=g["profit","lo"])
-vars_upper = list(x=g["x",field="up"],s=g["s","up"],profit=g["profit","up"])
+test_that("parameters round-trip", {
+  expect_equal(sort_by_keys(gp["b"]), sort_by_keys(g["b"]),
+               ignore_attr = TRUE)
+  expect_equal(sort_by_keys(gp["c"])$value, sort_by_keys(g["c"])$value)
+  expect_equal(sort_by_keys(gp["d"]), sort_by_keys(g["d"]),
+               ignore_attr = TRUE)
+})
+
+test_that("parameter domain values can contain spaces and dots", {
+  e_back <- gp["e"]
+  expect_equal(subset(e_back, get(names(e_back)[1]) == "with space")$value, 133)
+  expect_equal(subset(e_back, get(names(e_back)[1]) == "with.dot")$value, 233)
+})
+
+# Round-trip variables (level + lower + upper).
+vars       <- list(x = g["x"], s = g["s"], profit = g["profit"])
+vars_lower <- list(x = g["x", "lo"], s = g["s", "lo"], profit = g["profit", "lo"])
+vars_upper <- list(x = g["x", "up"], s = g["s", "up"], profit = g["profit", "up"])
 write.gdx("out_var.gdx",
-          params=params, vars_l=vars,
-          vars_lo = vars_lower,
-          vars_up = vars_upper)
-gv = gdx('out_var.gdx')
+          params = params_in,
+          vars_l = vars, vars_lo = vars_lower, vars_up = vars_upper)
+gv <- gdx("out_var.gdx")
 
-test_that("write_gdx", {
-  expect_equal(gp["b"],g["b"])
-  expect_equal(gp["c"]$value,g["c"][order(g["c"]$p),]$value)
-  expect_equal(gp["d"],g["d"])
-  expect_equal(gv["b"],g["b"])
-  expect_equal(gv["c"],g["c"])
-  expect_equal(gv["d"],g["d"])
-  expect_equal(subset(gv["x"],value!=0)$value,subset(g["x"],value!=0)$value)
-  expect_equal(subset(gv["s"],value!=0)$value,subset(g["s"],value!=0)$value)
-  expect_equal(subset(gv["profit"],value!=0)$value,subset(g["profit"],value!=0)$value)
-  expect_equal(gv["x","lo"]$value,g["x","lo"]$value)
-  expect_equal(gv["x","up"]$value,g["x","up"]$value)
-  expect_equal(gv["s","lo"]$value,g["s","lo"]$value)
-  expect_equal(gv["s","up"]$value,g["s","up"]$value)
-  expect_equal(gv["profit","lo"]$value,g["profit","lo"]$value)
-  expect_equal(gv["profit","up"]$value,g["profit","up"]$value)
-  expect_equal(subset(gv["e"],id=="with space")$value,133)
-  expect_equal(subset(gv["e"],id=="with.dot")$value,233)
+test_that("variables round-trip across level/lower/upper", {
+  for (v in c("x", "s", "profit")) {
+    nz_old <- subset(g[v], value != 0)$value
+    nz_new <- subset(gv[v], value != 0)$value
+    expect_equal(sort(nz_new), sort(nz_old), info = paste("level of", v))
+    expect_equal(sort(gv[v, "lo"]$value), sort(g[v, "lo"]$value),
+                 info = paste("lower of", v))
+    expect_equal(sort(gv[v, "up"]$value), sort(g[v, "up"]$value),
+                 info = paste("upper of", v))
+  }
 })
 
-file.remove("out_param.gdx")
-file.remove("out_var.gdx")
-
-test_that("write_gdx different digits", {
-
-  param1 = data.frame(x=c(1,2,22),value=1:3)
-  params = list(param1=param1)
-  write.gdx(basename("test.gdx"), params = params)
-
-  expect_true(file.exists("test.gdx"))
-
+test_that("compressed write produces a readable gdx", {
+  write.gdx("out_compressed.gdx", params = params_in, compress = TRUE)
+  gc_ <- gdx("out_compressed.gdx")
+  expect_equal(sort_by_keys(gc_["b"])$value, sort_by_keys(g["b"])$value)
+  file.remove("out_compressed.gdx")
 })
 
-file.remove("test.gdx")
-
-test_that("write_gdx sets", {
-
-myset1 = data.frame(`*`=c('london','paris','tahiti'))
-myset2 = data.frame(`*`=c('london','paris','tahiti'),b=c('tahiti','tahiti','paris'))
-write.gdx("test.gdx",sets=list(city=myset1,road=myset2))
-
-expect_true(file.exists("test.gdx"))
-
+test_that("write2.gdx is a fast path equivalent of write.gdx for params/sets", {
+  write2.gdx("out_w2.gdx", params = params_in)
+  gw2 <- gdx("out_w2.gdx")
+  expect_equal(sort_by_keys(gw2["b"])$value, sort_by_keys(g["b"])$value)
+  expect_equal(sort_by_keys(gw2["c"])$value, sort_by_keys(g["c"])$value)
+  file.remove("out_w2.gdx")
 })
 
-file.remove("test.gdx")
+test_that("scalar parameters can be written and re-read", {
+  write.gdx("out_scalar.gdx",
+            params = list(s1 = data.frame(value = 42)))
+  gs <- gdx("out_scalar.gdx")
+  expect_equal(gs["s1"]$value, 42)
+  file.remove("out_scalar.gdx")
+})
+
+test_that("write with explicit sets succeeds", {
+  city <- data.frame(uni = c("london", "paris", "tahiti"))
+  road <- data.frame(a = c("london", "paris", "tahiti"),
+                     b = c("tahiti", "tahiti", "paris"))
+  write.gdx("out_sets.gdx", sets = list(city = city, road = road))
+  expect_true(file.exists("out_sets.gdx"))
+  gs <- gdx("out_sets.gdx")
+  expect_true("city" %in% gs$sets$name)
+  expect_true("road" %in% gs$sets$name)
+  expect_equal(nrow(gs["city"]), 3)
+  expect_equal(nrow(gs["road"]), 3)
+  file.remove("out_sets.gdx")
+})
+
+test_that("legacy `data.frame(`*`=...)` set syntax still produces a gdx", {
+  # historical workaround in user code: column name `*` becomes `X.` in R
+  myset1 <- data.frame(`*` = c("london", "paris", "tahiti"))
+  myset2 <- data.frame(`*` = c("london", "paris", "tahiti"),
+                       b   = c("tahiti", "tahiti", "paris"))
+  expect_silent(
+    write.gdx("out_legacy_sets.gdx",
+              sets = list(city = myset1, road = myset2))
+  )
+  expect_true(file.exists("out_legacy_sets.gdx"))
+  file.remove("out_legacy_sets.gdx")
+})
+
+test_that("batch_extract concatenates rows across files", {
+  res <- batch_extract("b", files = c("ampl.gdx", "out_param.gdx"))
+  expect_true("b" %in% names(res))
+  expect_true("gdx" %in% names(res$b))
+  expect_equal(sort(unique(res$b$gdx)), sort(c("ampl.gdx", "out_param.gdx")))
+  expect_equal(nrow(res$b), 2 * nrow(g["b"]))
+})
+
+test_that("write.gdx preserves the GAMS description text", {
+  p <- data.frame(x = c("a", "b"), value = c(1, 2))
+  attr(p, "gams") <- "an annotated parameter"
+  write.gdx("out_desc.gdx", params = list(myp = p))
+  gd <- gdx("out_desc.gdx")
+  expect_equal(gd$parameters$text[gd$parameters$name == "myp"],
+               "an annotated parameter")
+  file.remove("out_desc.gdx")
+})
+
+test_that("write.gdx accepts +Inf upper bounds", {
+  vu <- data.frame(i = c("a", "b"), value = c(Inf, Inf))
+  vl <- data.frame(i = c("a", "b"), value = c(0, 0))
+  vlev <- data.frame(i = c("a", "b"), value = c(1, 2))
+  write.gdx("out_inf.gdx",
+            vars_l = list(v = vlev), vars_lo = list(v = vl),
+            vars_up = list(v = vu))
+  gi <- gdx("out_inf.gdx")
+  ups <- sort(gi["v", "up"]$value)
+  expect_true(all(is.infinite(ups)))
+  file.remove("out_inf.gdx")
+})
+
+# Cleanup
+for (f in c("out_param.gdx", "out_var.gdx")) if (file.exists(f)) file.remove(f)

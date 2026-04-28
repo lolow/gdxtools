@@ -1,56 +1,97 @@
 #' GDX file
 #'
+#' Constructs a \code{gdx} object backed by a \code{gamstransfer::Container}.
+#' The container loads the GDX once and is reused on subsequent
+#' \code{extract}/\code{[} calls.
+#'
 #' @param filename filename of the gdx file
+#' @param ... extra fields stored on the resulting object
 #' @author Laurent Drouet
 #' @examples
-#'
-#'   \dontrun{
-#'     mygdx <- gdx('results.gdx')
-#'   }
+#'  \dontrun{
+#'    mygdx <- gdx('results.gdx')
+#'  }
 #' @export
 gdx <- function(filename, ...) {
-  if(file.exists(filename)){
-    info = gdxInfo(filename, dump = F, returnDF = T)
-    return(structure(list(filename = filename,
-                          sets = info$sets,
-                          parameters = info$parameters,
-                          variables = info$variables,
-                          equations = info$equations,
-                          aliases = info$aliases,
-                          symCount = info$symCount,
-                          ...), class = "gdx"))
-  }else{
-    warning(paste(filename,"does not exist!"))
+  if (!file.exists(filename)) {
+    warning(paste(filename, "does not exist!"))
     return(structure(list(filename = filename, ...), class = "gdx"))
   }
+  m <- gamstransfer::Container$new(filename)
+
+  describe <- function(names_vec) {
+    if (length(names_vec) == 0) {
+      return(data.frame(name = character(), text = character(),
+                        dim = integer(), stringsAsFactors = FALSE))
+    }
+    text <- vapply(names_vec, function(n) {
+      d <- m[n]$description
+      if (is.null(d)) "" else as.character(d)
+    }, character(1))
+    dims <- vapply(names_vec, function(n) as.integer(m[n]$dimension), integer(1))
+    data.frame(name = names_vec, text = text, dim = dims,
+               stringsAsFactors = FALSE)
+  }
+
+  set_names <- m$listSets()
+  par_names <- m$listParameters()
+  var_names <- m$listVariables()
+  eq_names  <- m$listEquations()
+  ali_names <- m$listAliases()
+  if (is.null(ali_names)) ali_names <- character(0)
+
+  structure(list(
+    filename   = filename,
+    sets       = describe(set_names),
+    parameters = describe(par_names),
+    variables  = describe(var_names),
+    equations  = describe(eq_names),
+    aliases    = if (length(ali_names))
+                   data.frame(name = ali_names, stringsAsFactors = FALSE)
+                 else
+                   data.frame(name = character()),
+    symCount   = length(m$listSymbols()),
+    .container = m,
+    ...
+  ), class = "gdx")
 }
 
 #' @export
 print.gdx <- function(x, ...) {
-    cat("<gdx: ", x$filename, ", ", x$symCount," symbol",ifelse(x$symCount>1,"s",""),">\n", sep = "")
+  n <- if (is.null(x$symCount)) 0L else x$symCount
+  cat("<gdx: ", x$filename, ", ", n, " symbol",
+      if (n != 1L) "s" else "", ">\n", sep = "")
 }
 
 #' Extract data from a gdx
 #'
+#' @param x the gdx object
+#' @param ... arguments passed to \code{extract.gdx}
 #' @export
-extract <- function(x, ...) {
-    UseMethod("extract", x)
+extract <- function(x, ...) UseMethod("extract", x)
+
+#' @export
+`[.gdx` <- function(x, ...) extract.gdx(x, ...)
+
+# Return character vector of domain set names; "*" for the universe domain.
+.gdx_domain <- function(sym) {
+  d <- sym$domain
+  if (length(d) == 0) return(character(0))
+  vapply(d, function(x) if (is.character(x)) x else x$name, character(1))
 }
 
-#' Extract data from a gdx
-#'
-#' @author Laurent Drouet
-#' @examples
-#'
-#'   \dontrun{
-#'     mygdx <- gdx('results.gdx')
-#'     travel_cost <- mygdx["travel_cost"]
-#'   }
-#' @export
-`[.gdx` <- function(x, ...) {
-    extract.gdx(x, ...)
+# Translate "uni" / "uni_<i>" domain column names to V1, V2, ... when the
+# corresponding domain is the universe ("*"). Keeps backward compatibility
+# with the gdxrrw-era column naming.
+.gdx_rename_domains <- function(df, dom_chr) {
+  if (length(dom_chr) == 0 || ncol(df) == 0) return(df)
+  cols <- names(df)
+  for (i in seq_along(dom_chr)) {
+    if (dom_chr[i] == "*" && i <= length(cols)) cols[i] <- paste0("V", i)
+  }
+  names(df) <- cols
+  df
 }
-
 
 #' Extract parameter or variable data from the gdx file
 #'
@@ -58,89 +99,108 @@ extract <- function(x, ...) {
 #' @author Laurent Drouet
 #' @param x the gdx object
 #' @param item the name of the item to extract
-#' @param field the field of the variable to be extracted. Can be 'l', 'm', 'lo'
-#'   'up', respectively for level, marginal, lower bound, upper bound.
-#'   Defaults to level.
-#' @param addgdx if \code{TRUE}, the data.frame will get an extra column
-#'   with the filename of the gdx.
+#' @param field the field of the variable to be extracted. Can be 'l', 'm',
+#'   'lo', 'up' (level, marginal, lower, upper). Defaults to level.
+#' @param addgdx if \code{TRUE}, append a \code{gdx} column with the filename.
+#' @param ... ignored; for backward compatibility.
 #' @examples
 #'  \dontrun{
-#'     mygdx <- gdx('results.gdx')
-#'     travel_cost <- mygdx["travel_cost"]
-#'     travel_cost <- extract(mygdx,"travel_cost")
+#'    mygdx <- gdx('results.gdx')
+#'    travel_cost <- mygdx["travel_cost"]
+#'    travel_cost <- extract(mygdx, "travel_cost")
 #'  }
-#'
-extract.gdx <- function(x, item, field = "l", addgdx = F, ...) {
-  text = ""
-  if(item %in% x$variables$name){
-    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    #TODO text is not existing
-    #if("text" %in% colnames(x$variables)) text = x$variables$text[item==x$variables$name]
-  } else if(item %in% x$equations$name){
-    res = rgdx(x$filename, list(name = item, field = field), squeeze = F)
-    if("text" %in% colnames(x$equations)) text = x$equations$text[item==x$equations$name]
-  } else if(item %in% x$parameters$name){
-    res = rgdx(x$filename, list(name = item), squeeze = F)
-    if("text" %in% colnames(x$parameters)) text = x$parameters$text[item==x$parameters$name]
-  } else if(item %in% x$sets$name){
-    res = rgdx(x$filename, list(name = item), squeeze = F)
-    if("text" %in% colnames(x$sets)) text = x$sets$text[item==x$sets$name]
-  } else {
+extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
+  m <- x$.container
+  if (is.null(m)) {
+    warning("gdx not loaded")
+    return(NULL)
+  }
+  if (!m$hasSymbols(item)) {
     warning("item not found")
     return(NULL)
   }
-  if (res$dim == 0) {
-    df = data.frame(value=res$val[,res$dim+1])
-  } else {
-    ldf = list()
-    for (i in 1:res$dim) {
-      if (res$domains[i] == "*") {
-        colname = paste("V", i, sep = "")
-      } else {
-        colname = res$domains[i]
-      }
-      l = list(res$uels[[i]][res$val[, i]])
-      names(l) = colname
-      ldf = c(ldf,l)
-    }
-    df = data.frame(ldf,stringsAsFactors=F)
-    if(!res$type %in% c("set")){
-      df$value = res$val[, res$dim + 1]
-    }
-  }
-  if (addgdx){
-    if(nrow(df)==0){
-      df$gdx = character()
+  sym <- m[item]
+  rec <- sym$records
+  if (is.null(rec)) rec <- data.frame()
+
+  cls <- class(sym)
+  is_var <- "Variable" %in% cls
+  is_eq  <- "Equation" %in% cls
+  is_par <- "Parameter" %in% cls
+  is_set <- ("Set" %in% cls) || (".BaseAlias" %in% cls) ||
+            ("Alias" %in% cls) || ("UniverseAlias" %in% cls)
+
+  field_map <- c(l = "level", m = "marginal", lo = "lower", up = "upper")
+  dim <- as.integer(sym$dimension)
+
+  if (is_var || is_eq) {
+    fcol <- field_map[field]
+    if (is.na(fcol)) stop("invalid field '", field,
+                          "' (must be 'l', 'm', 'lo' or 'up')")
+    if (nrow(rec) == 0) {
+      df <- data.frame(matrix(character(), ncol = dim, nrow = 0),
+                       stringsAsFactors = FALSE)
+      df$value <- numeric(0)
     } else {
-      df$gdx = x$filename
+      dom_cols <- names(rec)[seq_len(dim)]
+      df <- rec[, c(dom_cols, fcol), drop = FALSE]
+      names(df)[length(names(df))] <- "value"
     }
+  } else if (is_par) {
+    if (dim == 0) {
+      val <- if (nrow(rec) > 0) as.numeric(rec[[1]][1]) else NA_real_
+      df <- data.frame(value = val)
+    } else if (nrow(rec) == 0) {
+      df <- data.frame(matrix(character(), ncol = dim, nrow = 0),
+                       stringsAsFactors = FALSE)
+      df$value <- numeric(0)
+    } else {
+      df <- rec
+    }
+  } else if (is_set) {
+    if (nrow(rec) == 0) {
+      df <- data.frame(matrix(character(), ncol = dim, nrow = 0),
+                       stringsAsFactors = FALSE)
+    } else {
+      dom_cols <- names(rec)[seq_len(dim)]
+      df <- rec[, dom_cols, drop = FALSE]
+    }
+  } else {
+    stop("Unknown symbol type: ", paste(cls, collapse = "/"))
   }
-  attributes(df) = c(attributes(df),gams=text)
-  return(df)
+
+  for (j in seq_along(df)) if (is.factor(df[[j]])) df[[j]] <- as.character(df[[j]])
+
+  df <- .gdx_rename_domains(df, .gdx_domain(sym))
+
+  if (addgdx) {
+    df$gdx <- if (nrow(df) == 0) character(0) else x$filename
+  }
+
+  text <- if (is.null(sym$description)) "" else as.character(sym$description)
+  attributes(df) <- c(attributes(df), gams = text)
+  df
 }
 
 #' Return the list of all items
 #'
+#' @param x the gdx object
+#' @param ... ignored
 #' @author Laurent Drouet
 #' @export
-all_items <- function(x, ...) {
-    UseMethod("all_items", x)
-}
+all_items <- function(x, ...) UseMethod("all_items", x)
 
-#' Return the list of all items
-#'
 #' @export
-#' @param x the gdx object
-#' @examples
-#'  \dontrun{
-#'     mygdx <- gdx('results.gdx')
-#'     all_items(mygdx)
-#'  }
-#'
 all_items.gdx <- function(x, ...) {
-    info = gdxInfo(x$filename, dump = F, returnList = T)
-    return(list(variables = info[["variables"]],
-      parameters = info[["parameters"]],
-      sets = info[["sets"]],
-      equations = info[["equations"]]))
+  m <- x$.container
+  if (is.null(m)) {
+    return(list(variables = character(0), parameters = character(0),
+                sets = character(0), equations = character(0)))
+  }
+  list(
+    variables  = m$listVariables(),
+    parameters = m$listParameters(),
+    sets       = m$listSets(),
+    equations  = m$listEquations()
+  )
 }

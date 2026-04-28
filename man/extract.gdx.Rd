@@ -4,30 +4,29 @@
 \alias{extract.gdx}
 \title{Extract parameter or variable data from the gdx file}
 \usage{
-\method{extract}{gdx}(x, item, field = "l", addgdx = F, ...)
+\method{extract}{gdx}(x, item, field = "l", addgdx = FALSE, ...)
 }
 \arguments{
 \item{x}{the gdx object}
 
 \item{item}{the name of the item to extract}
 
-\item{field}{the field of the variable to be extracted. Can be 'l', 'm', 'lo'
-'up', respectively for level, marginal, lower bound, upper bound.
-Defaults to level.}
+\item{field}{the field of the variable to be extracted. Can be 'l', 'm',
+'lo', 'up' (level, marginal, lower, upper). Defaults to level.}
 
-\item{addgdx}{if \code{TRUE}, the data.frame will get an extra column
-with the filename of the gdx.}
+\item{addgdx}{if \code{TRUE}, append a \code{gdx} column with the filename.}
+
+\item{...}{ignored; for backward compatibility.}
 }
 \description{
 Extract parameter or variable data from the gdx file
 }
 \examples{
  \dontrun{
-    mygdx <- gdx('results.gdx')
-    travel_cost <- mygdx["travel_cost"]
-    travel_cost <- extract(mygdx,"travel_cost")
+   mygdx <- gdx('results.gdx')
+   travel_cost <- mygdx["travel_cost"]
+   travel_cost <- extract(mygdx, "travel_cost")
  }
-
 }
 \author{
 Laurent Drouet

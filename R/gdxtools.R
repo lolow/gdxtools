@@ -3,291 +3,244 @@
 #' @name gdxtools
 #' @docType package
 #' @description
-#' Get info on GDX files (GAMS database exchange files) and convert parameters and variables data into data.frame.
-#'
+#' Read and write GDX files (GAMS database exchange) using the GAMS-maintained
+#' \code{gamstransfer} package as the underlying backend. Symbols are returned
+#' as plain data.frames with domain columns plus a \code{value} column,
+#' preserving the API of earlier (gdxrrw-backed) versions.
 NULL
 
 .onAttach <- function(libname, pkgname) {
   if (!interactive()) return()
-  packageStartupMessage(paste("gdxtools", utils::packageVersion("gdxtools")))
-  if (Sys.info()[["sysname"]] == 'Windows'){
-    gamsname = 'gams.exe'
-  } else {
-    gamsname = 'gams'
-  }
-  .res <- ''
-  # try to specify the gams installation from PATH
-  .res = igdx('',TRUE,TRUE)
-  if(.res=='' | !file.exists(file.path(.res,gamsname))){
-    .res = igdx(dirname(Sys.which(gamsname)),TRUE,TRUE)
-  }
-  if(.res=='' | !file.exists(file.path(.res,gamsname))){
-    if(Sys.info()[['sysname']]=='Windows'){
-      #try to load the latest version of GAMS
-      guess_gams_path = rev(sort(Sys.glob("C:\\GAMS\\win**\\**")))
-      if(length(guess_gams_path)>0){
-        .res=igdx(guess_gams_path[1],TRUE,TRUE)
-      }
-    }
-  }
-  if(.res=='' | !file.exists(file.path(.res,gamsname))){
-    packageStartupMessage('Please specify the GAMS directory with the function "igdx"')
-  } else {
-    packageStartupMessage(paste('GDX library load path:',.res))
-  }
+  packageStartupMessage(paste("gdxtools", utils::packageVersion("gdxtools"),
+                              "(gamstransfer backend)"))
 }
 
 #' Extract a list of items from many GDX
 #'
 #' @param items vector or list of items to extract
-#' @param files list of files, if not defined gdxs should be defined
-#' @param gdxs list of gdxs, if not defined files should be defined
-#' @author Laurent Drouet
-#' @examples
-#'
-#'   \dontrun{
-#'     myfiles = c("test1.gdx","test2.gdx")
-#'     allparam <- batch_extract("myparam",files=myfiles)
-#'   }
-#' @export
-batch_extract <- function(items,files=NULL,gdxs=NULL,...){
-  if(is.null(gdxs)){
-    gdxs <- lapply(files, gdx)
-  }
-  lall = list()
-  for(item in items){
-    tt <- lapply(gdxs,extract,item,addgdx=T,...)
-    tt <- do.call("rbind",tt)
-    tt <- list(tt)
-    names(tt) <- item
-    lall <- c(lall,tt)
-  }
-  return(lall)
-}
-
-#' Write a list of parameters or sets in a gdx, using gdxrrw (faster than write.gdx, but less options)
-#'
-#' @export
-#' @param file the filename of the gdx to save
-#' @param params named list of parameters
-#' @param sets named list of sets
+#' @param files list of files; if \code{NULL}, \code{gdxs} must be supplied
+#' @param gdxs list of \code{gdx} objects; if \code{NULL}, \code{files} must be supplied
+#' @param ... passed to \code{extract.gdx}
 #' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
-#'     param1 = data.frame(x=c('1','2'),value=1:10)
-#'     param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-#'     write.gdx("test.gdx",list(param1=param1,param2=param2))
+#'    myfiles  <- c("test1.gdx", "test2.gdx")
+#'    allparam <- batch_extract("myparam", files = myfiles)
 #'  }
-#'
-write2.gdx <- function(file, params=list(),
-                      sets=list()){
-  value = NULL
-  coll = list()
-  # sets
-  for(i in seq_along(sets)){
-    s = sets[[i]]
-    text = ifelse("gams" %in% names(attributes(sets[i])),attributes(sets[i])$gams,"")
-    name = ifelse(names(sets)[i]=="",paste0("set",i),names(sets)[i])
-    dim = ncol(s)
-    uels = list()
-    val = matrix(0,ncol=ncol(s),nrow=nrow(s))
-    domains = rep('*',dim)
-    for(j in 1:dim){
-      f = factor(s[[j]])
-      uels = c(uels, list(levels(f)))
-      val[,j] = as.numeric(f)
-    }
-    coll = c(coll,list(list(name=name, type='set', dim=dim, val=val,
-                       uels=uels, domains=domains, ts=text)))
+#' @export
+batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
+  if (is.null(gdxs)) gdxs <- lapply(files, gdx)
+  out <- list()
+  for (item in items) {
+    rows <- lapply(gdxs, extract, item, addgdx = TRUE, ...)
+    out[[item]] <- do.call("rbind", rows)
   }
-  # parameters
-  for(i in seq_along(params)){
-    p = subset(params[[i]], value!=0)
-    text = ifelse("gams" %in% names(attributes(params[[i]])),attributes(params[[i]])$gams,"")
-    name = ifelse(names(params)[[i]]=="",paste0("param",i),names(params)[[i]])
-    dim = ncol(p)-1
-    if(dim>0){
-      uels = list()
-      val = matrix(0,ncol=ncol(p),nrow=nrow(p))
-      domains = names(p)[names(p)!="value"]
-      for(j in 1:dim){
-        f = factor(p[[j]])
-        uels = c(uels, list(levels(f)))
-        val[,j] = as.numeric(f)
-      }
-      val[,dim+1] = p$value
-      coll = c(coll,list(list(name=name, type='parameter', form='sparse',
-                              dim=dim, val=val, uels=uels, domains=domains, ts=text)))
-    } else {
-      coll = c(coll,list(list(name=name, type='parameter', form='full',
-                              dim=0, val=p$value, ts=text)))
-    }
-  }
-  # write into a gdx
-  return(wgdx(file,coll))
+  out
 }
 
-#' Write a list of parameters in a gdx (old version which uses a temporary gams file)
+# Pull an attribute named "gams" off a data.frame (used to carry GAMS symbol
+# descriptions). Returns "" when missing.
+.text_attr <- function(x) {
+  a <- attributes(x)$gams
+  if (is.null(a)) "" else as.character(a)
+}
+
+.coerce_name <- function(provided, fallback) {
+  if (is.null(provided) || is.na(provided) || provided == "") fallback else provided
+}
+
+# Merge level/lower/upper data.frames for the same variable into a single
+# records frame indexed by the union of all index combinations.
+.merge_var_records <- function(vl, vlo, vup) {
+  inputs <- list()
+  if (!is.null(vl))  inputs[["level"]] <- vl
+  if (!is.null(vlo)) inputs[["lower"]] <- vlo
+  if (!is.null(vup)) inputs[["upper"]] <- vup
+  if (length(inputs) == 0) return(NULL)
+
+  norm <- function(df, valname) {
+    df <- as.data.frame(df)
+    if (ncol(df) == 0) return(NULL)
+    val_col <- if ("value" %in% names(df)) "value" else names(df)[ncol(df)]
+    idx_cols <- setdiff(names(df), val_col)
+    out <- df[, c(idx_cols, val_col), drop = FALSE]
+    names(out)[ncol(out)] <- valname
+    for (j in idx_cols) out[[j]] <- as.character(out[[j]])
+    out[[valname]] <- as.numeric(out[[valname]])
+    out
+  }
+  normed <- Map(norm, inputs, names(inputs))
+  normed <- normed[!vapply(normed, is.null, logical(1))]
+  if (length(normed) == 0) return(NULL)
+  if (length(normed) == 1) return(normed[[1]])
+
+  idx_cols <- setdiff(names(normed[[1]]), names(inputs)[1])
+  Reduce(function(a, b) merge(a, b, by = idx_cols, all = TRUE), normed)
+}
+
+# Resolve domain spec: returns "*" when the column name is not registered as a
+# set in the container, otherwise returns the set name (gamstransfer resolves
+# string names to Set objects).
+.resolve_domain <- function(m, idx_cols, registered_sets) {
+  vapply(idx_cols, function(cn) {
+    if (cn == "*" || !cn %in% registered_sets) "*" else cn
+  }, character(1))
+}
+
+# A column name is treated as a set reference only when it is a valid GAMS
+# identifier — letters / digits / underscore, starting with a letter. Names
+# like "X." (which R produces from `data.frame(`*`=...)`) fall back to the
+# universe domain.
+.is_valid_gams_name <- function(s) {
+  is.character(s) & nzchar(s) & grepl("^[a-zA-Z][a-zA-Z0-9_]*$", s)
+}
+
+# Common writer used by both write.gdx and write2.gdx.
+.write_container <- function(file, params, vars_l, vars_lo, vars_up, sets, compress) {
+  m <- gamstransfer::Container$new()
+
+  # Step 1 — gather the universe of values for each named index column,
+  # mirroring how the legacy implementation auto-built sets from union of
+  # all parameter / variable / set index columns. Skip column names that
+  # aren't valid GAMS identifiers; those become "*" domains downstream.
+  collect <- list()
+  add_to <- function(df, val_col_name) {
+    df <- as.data.frame(df)
+    if (ncol(df) == 0) return(invisible())
+    cols <- names(df)
+    idx_cols <- setdiff(cols, val_col_name)
+    for (cn in idx_cols) {
+      if (!.is_valid_gams_name(cn)) next
+      collect[[cn]] <<- unique(c(collect[[cn]], as.character(df[[cn]])))
+    }
+  }
+  for (s in sets)    add_to(s, character(0))
+  for (p in params)  add_to(p, "value")
+  for (v in c(vars_l, vars_lo, vars_up)) add_to(v, "value")
+
+  # Step 2 — register universe-domain sets for index column names that are not
+  # already provided as explicit sets in the call.
+  explicit_set_names <- setdiff(names(sets), "")
+  auto_set_names <- setdiff(names(collect), explicit_set_names)
+  for (sn in auto_set_names) {
+    rec <- data.frame(uni = collect[[sn]], stringsAsFactors = FALSE)
+    m$addSet(sn, "*", records = rec)
+  }
+
+  registered_sets <- function() m$listSets()
+
+  # Step 3 — explicit sets.
+  for (i in seq_along(sets)) {
+    name <- .coerce_name(names(sets)[i], paste0("set", i))
+    s <- as.data.frame(sets[[i]])
+    dim <- ncol(s)
+    cols <- names(s)
+    for (j in seq_len(dim)) s[[j]] <- as.character(s[[j]])
+    if (name %in% cols) {
+      domains <- as.list(rep("*", dim))
+    } else {
+      domains <- as.list(.resolve_domain(m, cols, registered_sets()))
+    }
+    if (m$hasSymbols(name)) m$removeSymbols(name)
+    m$addSet(name, domains, records = s, description = .text_attr(sets[[i]]))
+  }
+
+  # Step 4 — parameters.
+  for (i in seq_along(params)) {
+    name <- .coerce_name(names(params)[i], paste0("param", i))
+    p <- as.data.frame(params[[i]])
+    dim <- ncol(p) - 1L
+    if (dim < 0) dim <- 0L
+    if (dim == 0) {
+      val <- if (nrow(p) > 0) as.numeric(p[[1]][1]) else 0
+      m$addParameter(name, records = val, description = .text_attr(params[[i]]))
+    } else {
+      val_col <- if ("value" %in% names(p)) "value" else names(p)[ncol(p)]
+      idx_cols <- setdiff(names(p), val_col)
+      for (j in idx_cols) p[[j]] <- as.character(p[[j]])
+      p[[val_col]] <- as.numeric(p[[val_col]])
+      names(p)[names(p) == val_col] <- "value"
+      p <- p[p$value != 0, , drop = FALSE]
+      domains <- as.list(.resolve_domain(m, idx_cols, registered_sets()))
+      m$addParameter(name, domains, records = p,
+                     description = .text_attr(params[[i]]))
+    }
+  }
+
+  # Step 5 — variables (level/lower/upper merged by index).
+  vnames <- unique(c(names(vars_l), names(vars_lo), names(vars_up)))
+  vnames <- vnames[!is.na(vnames) & vnames != ""]
+  for (vn in vnames) {
+    rec <- .merge_var_records(vars_l[[vn]], vars_lo[[vn]], vars_up[[vn]])
+    if (is.null(rec) || nrow(rec) == 0) next
+    description_ref <- vars_l[[vn]]
+    if (is.null(description_ref)) description_ref <- vars_lo[[vn]]
+    if (is.null(description_ref)) description_ref <- vars_up[[vn]]
+    desc <- .text_attr(description_ref)
+    val_cols_present <- intersect(c("level", "lower", "upper"), names(rec))
+    idx_cols <- setdiff(names(rec), val_cols_present)
+    dim <- length(idx_cols)
+    if (dim == 0) {
+      m$addVariable(vn, "free",
+                    records = as.data.frame(rec[1, val_cols_present, drop = FALSE]),
+                    description = desc)
+    } else {
+      domains <- as.list(.resolve_domain(m, idx_cols, registered_sets()))
+      m$addVariable(vn, "free", domains, records = rec, description = desc)
+    }
+  }
+
+  if (isTRUE(compress)) m$write(file, compress = TRUE) else m$write(file)
+  invisible(0)
+}
+
+#' Write a list of parameters / sets / variables to a GDX
+#'
+#' Builds a \code{gamstransfer::Container} from the supplied data and writes it
+#' to \code{file}. Variables can be given as separate level / lower / upper
+#' data.frames (keyed by the same variable name across the three lists);
+#' missing entries fall back to the gamstransfer defaults (level 0,
+#' lower -Inf, upper +Inf for free variables).
 #'
 #' @export
-#' @param file the filename of the gdx to save
-#' @param params named list of parameters
-#' @param sets named list of sets
-#' @param vars_l named list of variable levels
-#' @param vars_lo named list of variable lower bounds
-#' @param vars_up named list of variable upper bounds
-#' @param usetempdir uses system temp dir for the temporary files, otherwise use local file "tmp.gms"
-#' @param removeLST remove temporary lst file
-#' @param digit number of digits to use
-#' @param compress compress GDX
+#' @param file the output gdx filename
+#' @param params named list of parameter data.frames
+#' @param vars_l named list of variable level data.frames
+#' @param vars_lo named list of variable lower-bound data.frames
+#' @param vars_up named list of variable upper-bound data.frames
+#' @param sets named list of set data.frames
+#' @param removeLST kept for backward compatibility; ignored.
+#' @param usetempdir kept for backward compatibility; ignored.
+#' @param digits kept for backward compatibility; ignored (gamstransfer
+#'   preserves full numeric precision).
+#' @param compress when \code{TRUE}, write a compressed gdx.
 #' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
-#'     param1 = data.frame(x=c('1','2'),value=1:10)
-#'     param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-#'     write.gdx("test.gdx",list(param1=param1,param2=param2))
+#'    param1 <- data.frame(x = c('1','2'), value = 1:2)
+#'    param2 <- data.frame(a = c('london','paris'), value = c(50, 0.2))
+#'    write.gdx("test.gdx", list(param1 = param1, param2 = param2))
 #'  }
-#'
-write.gdx <- function(file, params=list(),
-                      vars_l=list(),
-                      vars_lo=list(),
-                      vars_up=list(),
-                      sets=list(),
-                      removeLST=T, usetempdir=T, digits=16, compress=F){
-  value = NULL
-  # switch to faster write function when possible
-  if(!compress & length(vars_l)==0 & length(vars_lo)==0 & length(vars_up)==0){
-    return(write2.gdx(file, params = params, sets = sets))
-  }
-  # Create a temporary gams file
-  if(usetempdir){
-    gms = tempfile(pattern = "wgdx", fileext = ".gms")
-    lst = tempfile(pattern = "wgdx", fileext = ".lst")
-  } else {
-    gms = "tmp.gms"
-    lst = "tmp.lst"
-  }
-  fgms = file(gms, "w")
-  writeLines("$offdigit", fgms)
-  writeLines("$onempty", fgms)
-  # collect and write sets
-  alllists = c(params,vars_l,vars_lo,vars_up,sets)
-  allsets = unique(unlist(lapply(alllists, names)))
-  allsets = subset(allsets, !allsets %in% c('*','value'))
-  for(i in seq_along(allsets)){
-    s = allsets[i]
-    writeLines(paste("set", s, "/"), fgms)
-    lvalues = lapply(alllists, function(x) unique((as.character(x[[s]]))))
-    values = unique(unlist(lvalues))
-    writeLines(paste0("'",values,"'"), fgms)
-    writeLines("/;", fgms)
-  }
-  # Write sets
-  for(i in seq_along(sets)){
-    s = sets[[i]]
-    writeLines(paste0("set ", names(sets)[i],
-                      " (",paste(rep('*',length(names(s))),collapse=","),")/"), fgms)
-    if(ncol(s)==1){
-      writeLines(paste0("'",trimws(s[,1]),"'"), fgms)
-    }
-    if(ncol(s)>1){
-      writeLines(paste0("'",paste(apply(as.data.frame(s)[,names(s)],1,paste,collapse="'.'")),"'"), fgms)
-    }
-    writeLines("/;", fgms)
-  }
-  # Write parameters
-  for(i in seq_along(params)){
-    p = params[[i]]
-    text = ifelse("gams" %in% names(attributes(p)),attributes(p)$gams,"")
-    name = ifelse(names(params)[i]=="",paste0("param",i),names(params)[i])
-    if(length(colnames(p))==1){
-      writeLines(paste("scalar", name, " '", text, "' /", format(as.numeric(p[1]),digits=digits), "/;"), fgms)
-    } else {
-      indices = subset(colnames(p), colnames(p) != "value")
-      p[[length(indices)+1]] = format(p[[length(indices)+1]],digits=digits)
-      writeLines(paste0("parameter ", name,
-                        "(", paste(indices, collapse=","), ") ", " '", text, "' /"), fgms)
-      concatenate1 <- function(row, len) paste(paste(paste0("'",trimws(row[1:len]),"'"),collapse="."), row[len+1])
-      writeLines(apply(subset(p,value!=0),1,concatenate1, len=length(indices)), fgms)
-      writeLines("/;", fgms)
-    }
-  }
-  # Write variables
-  allvars = c(vars_l,vars_lo,vars_up)
-  varnames = c()
-  for(i in seq_along(allvars)){
-    if(!names(allvars)[i] %in% varnames){
-      v = allvars[[i]]
-      text = ifelse("gams" %in% names(attributes(v)),attributes(v)$gams,"")
-      if(length(colnames(v))==1){
-        writeLines(paste0("variable ", names(allvars)[i], " '", text, "' ;"), fgms)
-      }else{
-        indices = subset(colnames(v), colnames(v) != "value")
-        writeLines(paste0("variable ", names(allvars)[i],
-                          "(", paste(indices, collapse=","), ") ", " '", text, "' ;"), fgms)
-      }
-      varnames = c(varnames,names(allvars)[i])
-    }
-  }
-  concatenate2 <- function(row, len, vname, vext) {
-    if (len == 1) {
-      sprintf(paste0(vname,vext,"(%s)=%s;"),
-              paste0("'",row[,1],"'"),
-              row[,len+1])
-    } else {
-      sprintf(paste0(vname,vext,"(%s)=%s;"),
-              paste0("'",apply(row[,1:len], 1, function(x) paste(x, collapse = "','")),"'"),
-              row[,len+1])
-    }
-  }
-  for(i in seq_along(vars_l)){
-    v = vars_l[[i]]
-    v = subset(v,value!=0)
-    if(nrow(v)>0){
-      if(length(colnames(v))==1){
-        writeLines(paste0(names(vars_l)[i],".l = ",format(as.numeric(v[1]),digits=digits),";"), fgms)
-      } else {
-        indices = subset(colnames(v), colnames(v) != "value")
-        v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(concatenate2(v, len=length(indices), vname=names(vars_l)[i], vext=".l"), fgms)
-      }
-    }
-  }
+write.gdx <- function(file, params = list(),
+                      vars_l = list(), vars_lo = list(), vars_up = list(),
+                      sets = list(),
+                      removeLST = TRUE, usetempdir = TRUE,
+                      digits = 16, compress = FALSE) {
+  .write_container(file, params, vars_l, vars_lo, vars_up, sets, compress)
+}
 
-  for(i in seq_along(vars_lo)){
-    v = vars_lo[[i]]
-    v = subset(v,!is.infinite(value))
-    if(nrow(v)>0){
-      if(length(colnames(v))==1){
-        writeLines(paste0(names(vars_lo)[i],".lo = ",format(as.numeric(v[1]),digits=digits),";"), fgms)
-      } else {
-        indices = subset(colnames(v), colnames(v) != "value")
-        v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(concatenate2(v, len=length(indices), vname=names(vars_lo)[i], vext=".lo"), fgms)
-      }
-    }
-  }
-  for(i in seq_along(vars_up)){
-    v = vars_up[[i]]
-    v = subset(v,!is.infinite(value))
-    if(nrow(v)>0){
-      if(length(colnames(v))==1){
-        writeLines(paste0(names(vars_up)[i],".up = ",format(as.numeric(v[1]),digits=digits),";"), fgms)
-      } else {
-        indices = subset(colnames(v), colnames(v) != "value")
-        v[[length(indices)+1]] = format(v[[length(indices)+1]],digits=digits)
-        writeLines(concatenate2(v, len=length(indices), vname=names(vars_up)[i], vext=".up"), fgms)
-      }
-    }
-  }
-  # save into a gdx
-  writeLines(paste0('execute_unload "',file,'"\n',
-                    paste(names(alllists),collapse="\n"),
-                    "\n;"), fgms)
-  writeLines("$offempty", fgms)
-  close(fgms)
-  res = gams(paste0(gms,ifelse(compress," gdxcompress=1","")," output=",lst))
-  if(res!=0) stop(paste("write gdx failed -",gms))
-  if(removeLST) file.remove(lst)
-  return(res)
+#' Write parameters and sets to a gdx (alias of write.gdx for backward compatibility)
+#'
+#' Historically this was a faster path that bypassed the GAMS process used by
+#' the legacy \code{write.gdx}. With the gamstransfer backend both functions
+#' use the same fast path; this entry point is kept for code that calls it
+#' explicitly.
+#'
+#' @export
+#' @param file the output gdx filename
+#' @param params named list of parameter data.frames
+#' @param sets named list of set data.frames
+#' @author Laurent Drouet
+write2.gdx <- function(file, params = list(), sets = list()) {
+  .write_container(file, params, list(), list(), list(), sets, compress = FALSE)
 }

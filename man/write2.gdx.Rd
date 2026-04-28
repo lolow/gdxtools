@@ -2,27 +2,22 @@
 % Please edit documentation in R/gdxtools.R
 \name{write2.gdx}
 \alias{write2.gdx}
-\title{Write a list of parameters or sets in a gdx, using gdxrrw (faster than write.gdx, but less options)}
+\title{Write parameters and sets to a gdx (alias of write.gdx for backward compatibility)}
 \usage{
 write2.gdx(file, params = list(), sets = list())
 }
 \arguments{
-\item{file}{the filename of the gdx to save}
+\item{file}{the output gdx filename}
 
-\item{params}{named list of parameters}
+\item{params}{named list of parameter data.frames}
 
-\item{sets}{named list of sets}
+\item{sets}{named list of set data.frames}
 }
 \description{
-Write a list of parameters or sets in a gdx, using gdxrrw (faster than write.gdx, but less options)
-}
-\examples{
- \dontrun{
-    param1 = data.frame(x=c('1','2'),value=1:10)
-    param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-    write.gdx("test.gdx",list(param1=param1,param2=param2))
- }
-
+Historically this was a faster path that bypassed the GAMS process used by
+the legacy \code{write.gdx}. With the gamstransfer backend both functions
+use the same fast path; this entry point is kept for code that calls it
+explicitly.
 }
 \author{
 Laurent Drouet
