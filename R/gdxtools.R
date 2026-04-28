@@ -61,12 +61,13 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   norm <- function(df, valname) {
     df <- as.data.frame(df)
     if (ncol(df) == 0) return(NULL)
-    val_col <- if ("value" %in% names(df)) "value" else names(df)[ncol(df)]
-    idx_cols <- setdiff(names(df), val_col)
-    out <- df[, c(idx_cols, val_col), drop = FALSE]
-    names(out)[ncol(out)] <- valname
-    for (j in idx_cols) out[[j]] <- as.character(out[[j]])
-    out[[valname]] <- as.numeric(out[[valname]])
+    v_idx    <- if ("value" %in% names(df)) match("value", names(df)) else ncol(df)
+    idx_idxs <- setdiff(seq_len(ncol(df)), v_idx)
+    idx_cols <- names(df)[idx_idxs]
+    for (j in idx_idxs) df[[j]] <- as.character(df[[j]])
+    df[[v_idx]] <- as.numeric(df[[v_idx]])
+    out <- df[, c(idx_idxs, v_idx), drop = FALSE]
+    names(out) <- c(make.unique(idx_cols), valname)
     out
   }
   normed <- Map(norm, inputs, names(inputs))
@@ -130,14 +131,18 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       m$addParameter(name, records = val,
                      description = .text_attr(params[[i]]))
     } else {
-      val_col <- if ("value" %in% names(p)) "value" else names(p)[ncol(p)]
-      idx_cols <- setdiff(names(p), val_col)
-      for (j in idx_cols) p[[j]] <- as.character(p[[j]])
-      p[[val_col]] <- as.numeric(p[[val_col]])
-      names(p)[names(p) == val_col] <- "value"
-      p <- p[p$value != 0, , drop = FALSE]
+      # Position-based — column names may be duplicated (e.g. "*", "*", "value"
+      # from a data.table) and setdiff() would collapse those.
+      v_idx    <- if ("value" %in% names(p)) match("value", names(p)) else ncol(p)
+      idx_idxs <- setdiff(seq_len(ncol(p)), v_idx)
+      idx_cols <- names(p)[idx_idxs]
+      for (j in idx_idxs) p[[j]] <- as.character(p[[j]])
+      p[[v_idx]] <- as.numeric(p[[v_idx]])
+      records <- p[, c(idx_idxs, v_idx), drop = FALSE]
+      names(records) <- c(make.unique(idx_cols), "value")
+      records <- records[records$value != 0, , drop = FALSE]
       domains <- .domain_for(m, idx_cols, explicit_set_names)
-      m$addParameter(name, domains, records = p,
+      m$addParameter(name, domains, records = records,
                      description = .text_attr(params[[i]]))
     }
   }

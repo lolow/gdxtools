@@ -181,6 +181,32 @@ test_that("set column names do not leak as separate symbols (README example 2)",
   file.remove("out_readme.gdx")
 })
 
+test_that("write.gdx accepts duplicate `*` column names (incl. empty data)", {
+  # data.tables happily allow duplicate column names; an empty 2-D parameter
+  # with two "*" columns and one "value" column previously failed with
+  # 'Dimensionality of records 2 is inconsistent with parameter domain
+  # specification 1' because setdiff() collapsed the duplicates.
+  empty_dup <- data.frame(check.names = FALSE,
+                          a = character(0), b = character(0),
+                          value = numeric(0))
+  names(empty_dup) <- c("*", "*", "value")
+  write.gdx("out_dup_empty.gdx", params = list(carbonprice = empty_dup))
+  g <- gdx("out_dup_empty.gdx")
+  expect_equal(g$parameters$dim[g$parameters$name == "carbonprice"], 2L)
+  expect_equal(nrow(g["carbonprice"]), 0L)
+  file.remove("out_dup_empty.gdx")
+
+  full_dup <- data.frame(check.names = FALSE,
+                         a = c("x", "y"), b = c("u", "v"),
+                         value = c(1, 2))
+  names(full_dup) <- c("*", "*", "value")
+  write.gdx("out_dup_full.gdx", params = list(p = full_dup))
+  g2 <- gdx("out_dup_full.gdx")
+  expect_equal(g2$parameters$dim[g2$parameters$name == "p"], 2L)
+  expect_equal(sort(g2["p"]$value), c(1, 2))
+  file.remove("out_dup_full.gdx")
+})
+
 test_that("parameter column name becomes a relaxed domain reference", {
   # Mirrors the legacy GAMS-process output: `parameter b(r) /.../;` produces a
   # GDX where b's domain is named "r" without a separate set "r" symbol.
