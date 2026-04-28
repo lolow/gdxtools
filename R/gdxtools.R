@@ -78,16 +78,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   Reduce(function(a, b) merge(a, b, by = idx_cols, all = TRUE), normed)
 }
 
-# Resolve domain spec: returns "*" when the column name is not registered as a
-# set in the container, otherwise returns the set name (gamstransfer resolves
-# string names to Set objects).
-.resolve_domain <- function(m, idx_cols, registered_sets) {
-  vapply(idx_cols, function(cn) {
-    if (cn == "*" || !cn %in% registered_sets) "*" else cn
-  }, character(1))
-}
-
-# A column name is treated as a set reference only when it is a valid GAMS
+# A column name is treated as a domain label only when it is a valid GAMS
 # identifier — letters / digits / underscore, starting with a letter. Names
 # like "X." (which R produces from `data.frame(`*`=...)`) fall back to the
 # universe domain.
@@ -95,57 +86,40 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   is.character(s) & nzchar(s) & grepl("^[a-zA-Z][a-zA-Z0-9_]*$", s)
 }
 
+# For each index column name, return either a registered Set (when the user
+# supplied an explicit set with that name) or the column name as a relaxed
+# string domain. Invalid GAMS names collapse to "*". This matches the legacy
+# behavior where parameters declared `parameter b(r)` even when the set `r`
+# was not separately unloaded into the GDX.
+.domain_for <- function(m, idx_cols, explicit_set_names) {
+  lapply(idx_cols, function(cn) {
+    if (!.is_valid_gams_name(cn)) return("*")
+    if (cn %in% explicit_set_names) return(m[cn])
+    cn
+  })
+}
+
 # Common writer used by both write.gdx and write2.gdx.
 .write_container <- function(file, params, vars_l, vars_lo, vars_up, sets, compress) {
   m <- gamstransfer::Container$new()
 
-  # Step 1 — gather the universe of values for each named index column,
-  # mirroring how the legacy implementation auto-built sets from union of
-  # all parameter / variable / set index columns. Skip column names that
-  # aren't valid GAMS identifiers; those become "*" domains downstream.
-  collect <- list()
-  add_to <- function(df, val_col_name) {
-    df <- as.data.frame(df)
-    if (ncol(df) == 0) return(invisible())
-    cols <- names(df)
-    idx_cols <- setdiff(cols, val_col_name)
-    for (cn in idx_cols) {
-      if (!.is_valid_gams_name(cn)) next
-      collect[[cn]] <<- unique(c(collect[[cn]], as.character(df[[cn]])))
-    }
-  }
-  for (s in sets)    add_to(s, character(0))
-  for (p in params)  add_to(p, "value")
-  for (v in c(vars_l, vars_lo, vars_up)) add_to(v, "value")
-
-  # Step 2 — register universe-domain sets for index column names that are not
-  # already provided as explicit sets in the call.
   explicit_set_names <- setdiff(names(sets), "")
-  auto_set_names <- setdiff(names(collect), explicit_set_names)
-  for (sn in auto_set_names) {
-    rec <- data.frame(uni = collect[[sn]], stringsAsFactors = FALSE)
-    m$addSet(sn, "*", records = rec)
-  }
 
-  registered_sets <- function() m$listSets()
-
-  # Step 3 — explicit sets.
+  # Sets — always written with universe domain regardless of column names
+  # (matching the legacy `set name (*,...)` declaration). Set column names
+  # never leak as separate symbols in the output GDX.
   for (i in seq_along(sets)) {
     name <- .coerce_name(names(sets)[i], paste0("set", i))
     s <- as.data.frame(sets[[i]])
     dim <- ncol(s)
-    cols <- names(s)
     for (j in seq_len(dim)) s[[j]] <- as.character(s[[j]])
-    if (name %in% cols) {
-      domains <- as.list(rep("*", dim))
-    } else {
-      domains <- as.list(.resolve_domain(m, cols, registered_sets()))
-    }
     if (m$hasSymbols(name)) m$removeSymbols(name)
-    m$addSet(name, domains, records = s, description = .text_attr(sets[[i]]))
+    m$addSet(name, rep("*", dim), records = s,
+             description = .text_attr(sets[[i]]))
   }
 
-  # Step 4 — parameters.
+  # Parameters — index column names become relaxed domain references unless
+  # they correspond to an explicit set the caller provided.
   for (i in seq_along(params)) {
     name <- .coerce_name(names(params)[i], paste0("param", i))
     p <- as.data.frame(params[[i]])
@@ -153,7 +127,8 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     if (dim < 0) dim <- 0L
     if (dim == 0) {
       val <- if (nrow(p) > 0) as.numeric(p[[1]][1]) else 0
-      m$addParameter(name, records = val, description = .text_attr(params[[i]]))
+      m$addParameter(name, records = val,
+                     description = .text_attr(params[[i]]))
     } else {
       val_col <- if ("value" %in% names(p)) "value" else names(p)[ncol(p)]
       idx_cols <- setdiff(names(p), val_col)
@@ -161,13 +136,14 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       p[[val_col]] <- as.numeric(p[[val_col]])
       names(p)[names(p) == val_col] <- "value"
       p <- p[p$value != 0, , drop = FALSE]
-      domains <- as.list(.resolve_domain(m, idx_cols, registered_sets()))
+      domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addParameter(name, domains, records = p,
                      description = .text_attr(params[[i]]))
     }
   }
 
-  # Step 5 — variables (level/lower/upper merged by index).
+  # Variables — same domain logic as parameters, with level/lower/upper merged
+  # on the union of provided indices.
   vnames <- unique(c(names(vars_l), names(vars_lo), names(vars_up)))
   vnames <- vnames[!is.na(vnames) & vnames != ""]
   for (vn in vnames) {
@@ -185,7 +161,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
                     records = as.data.frame(rec[1, val_cols_present, drop = FALSE]),
                     description = desc)
     } else {
-      domains <- as.list(.resolve_domain(m, idx_cols, registered_sets()))
+      domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addVariable(vn, "free", domains, records = rec, description = desc)
     }
   }

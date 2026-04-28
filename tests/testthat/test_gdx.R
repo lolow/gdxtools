@@ -167,6 +167,32 @@ test_that("write with explicit sets succeeds", {
   file.remove("out_sets.gdx")
 })
 
+test_that("set column names do not leak as separate symbols (README example 2)", {
+  myset1 <- data.frame(a = c("london", "paris", "tahiti"))
+  myset2 <- data.frame(a = c("london", "paris", "tahiti"),
+                       b = c("tahiti", "tahiti", "paris"))
+  write.gdx("out_readme.gdx", sets = list(city = myset1, road = myset2))
+  g <- gdx("out_readme.gdx")
+  # Only the user's two sets — no `a` or `b` symbol leaked.
+  expect_equal(sort(g$sets$name), c("city", "road"))
+  # Universe domain → V1 / V2 column naming on round-trip.
+  expect_equal(names(g["city"]), "V1")
+  expect_equal(names(g["road"]), c("V1", "V2"))
+  file.remove("out_readme.gdx")
+})
+
+test_that("parameter column name becomes a relaxed domain reference", {
+  # Mirrors the legacy GAMS-process output: `parameter b(r) /.../;` produces a
+  # GDX where b's domain is named "r" without a separate set "r" symbol.
+  b_in <- data.frame(r = c("iron", "nickel"), value = c(35.8, 7.32))
+  write.gdx("out_relax.gdx", params = list(b = b_in))
+  g <- gdx("out_relax.gdx")
+  expect_equal(g$parameters$name, "b")
+  expect_equal(nrow(g$sets), 0)               # no leaked "r" set
+  expect_equal(names(g["b"]), c("r", "value"))
+  file.remove("out_relax.gdx")
+})
+
 test_that("legacy `data.frame(`*`=...)` set syntax still produces a gdx", {
   # historical workaround in user code: column name `*` becomes `X.` in R
   myset1 <- data.frame(`*` = c("london", "paris", "tahiti"))
