@@ -264,6 +264,18 @@ test_that("NA / NaN values are preserved (mapped to GAMS NA)", {
   file.remove("out_na_val.gdx")
 })
 
+test_that("duplicate set rows are collapsed with a warning", {
+  s <- data.frame(a = c("x", "y", "x", "z", "y"),
+                  b = c("u", "v", "u", "w", "v"))
+  expect_warning(
+    write.gdx("out_dup_set.gdx", sets = list(s = s)),
+    "2 duplicate row\\(s\\)"
+  )
+  g <- gdx("out_dup_set.gdx")
+  expect_equal(nrow(g["s"]), 3)
+  file.remove("out_dup_set.gdx")
+})
+
 test_that("duplicate keys are collapsed last-wins with a warning", {
   p <- data.frame(i = c("a", "a", "b", "c", "c", "c"),
                   value = c(1, 2, 3, 4, 5, 6))

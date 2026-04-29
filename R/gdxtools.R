@@ -130,6 +130,15 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     dim <- ncol(s)
     for (j in seq_len(dim)) s[[j]] <- as.character(s[[j]])
     .check_index_na(s, seq_len(dim), name, "set")
+    if (nrow(s) > 0L) {
+      dup <- duplicated(s, fromLast = TRUE)
+      if (any(dup)) {
+        warning(sprintf(
+          "set '%s': %d duplicate row(s) collapsed",
+          name, sum(dup)), call. = FALSE)
+        s <- s[!dup, , drop = FALSE]
+      }
+    }
     if (m$hasSymbols(name)) m$removeSymbols(name)
     m$addSet(name, rep("*", dim), records = s,
              description = .text_attr(sets[[i]]))
