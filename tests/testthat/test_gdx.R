@@ -321,6 +321,39 @@ test_that("NA in an index column raises an informative error (no SIGABRT)", {
   )
 })
 
+test_that("fractional-numeric index column triggers a stray-column warning", {
+  # Real-world bug: a make_data_*.R script left `low` / `high` parquet columns
+  # in the data.table before calling write.gdx, so the parameter ended up with
+  # those numeric columns silently encoded as UEL strings — 6D instead of 4D,
+  # with floats like "-0.589" as keys.
+  p <- data.frame(m = "atm", year = 1850L, global = "world",
+                  value = -0.06, low = -0.58, high = -0.24)
+  expect_warning(
+    write.gdx("out_stray.gdx", params = list(p = p)),
+    "non-integer numeric"
+  )
+  file.remove("out_stray.gdx")
+
+  # Same guard on variables.
+  v <- data.frame(i = "x", j = 0.5, value = 1.0)
+  expect_warning(
+    write.gdx("out_stray_v.gdx", vars_l = list(v = v)),
+    "non-integer numeric"
+  )
+  file.remove("out_stray_v.gdx")
+
+  # Integer index columns (the typical `year` case) must NOT warn.
+  ok <- data.frame(year = 2020L, iso3 = "FRA", value = 1.5)
+  expect_silent(write.gdx("out_ok.gdx", params = list(ok = ok)))
+  file.remove("out_ok.gdx")
+
+  # Year stored as double but with integer-valued content must NOT warn —
+  # data.tables often carry years as numeric and we shouldn't force a cast.
+  ok2 <- data.frame(year = 2020, iso3 = "FRA", value = 1.5)
+  expect_silent(write.gdx("out_ok2.gdx", params = list(ok = ok2)))
+  file.remove("out_ok2.gdx")
+})
+
 test_that("empty variables are written as a declaration of the right dim", {
   # Empty input previously got silently dropped; legacy declared the
   # variable in the GDX even when no records were provided.

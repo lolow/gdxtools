@@ -115,6 +115,29 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   }
 }
 
+# Flag double-precision columns with non-integer content used as indices.
+# UELs are strings; a real index column is typically character, factor, or
+# integer-valued (e.g. year). A double column with fractional values almost
+# always means the caller forgot to drop a stray numeric column from the
+# source data (e.g. a `low` / `high` column left over from the raw parquet),
+# which would silently encode the floats as UEL strings — a class of bug
+# that is very hard to spot in the resulting GDX. Integer-valued doubles
+# (year stored as `1850.0`) are common enough to be silent.
+.check_index_double <- function(records, idx_idxs, sym_name, sym_kind) {
+  for (j in idx_idxs) {
+    col <- records[[j]]
+    if (!is.double(col)) next
+    finite <- col[is.finite(col)]
+    if (!length(finite)) next
+    if (any(finite != floor(finite))) {
+      warning(sprintf(
+        "%s '%s': index column '%s' has non-integer numeric values; this usually means a stray non-value column slipped in and will be encoded as UEL strings. Drop it before calling write.gdx, or coerce to character if intentional.",
+        sym_kind, sym_name, names(records)[j]
+      ), call. = FALSE)
+    }
+  }
+}
+
 # Common writer used by both write.gdx and write2.gdx.
 .write_container <- function(file, params, vars_l, vars_lo, vars_up, sets, compress) {
   m <- gamstransfer::Container$new()
@@ -161,6 +184,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       v_idx    <- if ("value" %in% names(p)) match("value", names(p)) else ncol(p)
       idx_idxs <- setdiff(seq_len(ncol(p)), v_idx)
       idx_cols <- names(p)[idx_idxs]
+      .check_index_double(p, idx_idxs, name, "parameter")
       for (j in idx_idxs) p[[j]] <- as.character(p[[j]])
       p[[v_idx]] <- as.numeric(p[[v_idx]])
       records <- p[, c(idx_idxs, v_idx), drop = FALSE]
@@ -216,6 +240,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
                     description = desc)
     } else {
       .check_index_na(rec, idx_idxs, vn, "variable")
+      .check_index_double(rec, idx_idxs, vn, "variable")
       if (nrow(rec) > 0L) {
         idx_only <- rec[, idx_idxs, drop = FALSE]
         dup <- duplicated(idx_only, fromLast = TRUE)
