@@ -15,6 +15,12 @@
 #include "gclgms.h"
 #include "globals.h"
 
+#include <Rversion.h>
+#if R_VERSION < R_Version(4, 5, 0)
+# define R_getVar(sym, rho, inherits) \
+    ((inherits) ? Rf_findVar((sym), (rho)) : Rf_findVarInFrame((rho), (sym)))
+#endif
+
 /* just to shut up some warnings on Linux */
 typedef int (*compareFunc_t) (const void *, const void *);
 
@@ -788,7 +794,7 @@ char *getGlobalString (const char *globName, shortStringBuf_t result)
   if (gamsoIsUnset)
     return res;
 
-  gamso = findVar (install("gamso"), R_GlobalEnv);
+  gamso = R_getVar (install("gamso"), R_GlobalEnv, TRUE);
 
   if (gamso == NULL || TYPEOF(gamso) != VECSXP) {
     gamsoIsUnset = 1;
@@ -965,7 +971,7 @@ int isCompress (void)
   shortStringBuf_t fName;
 
   str = NULL;
-  gamso = findVar( install("gamso"), R_GlobalEnv );
+  gamso = R_getVar( install("gamso"), R_GlobalEnv, TRUE );
 
   if (gamso == NULL || TYPEOF(gamso) == NILSXP  ||  TYPEOF(gamso) == SYMSXP) {
     globalGams = 0;
