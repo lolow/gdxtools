@@ -138,8 +138,28 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   }
 }
 
+# Apply the user's NA policy to a records data.frame. "drop" matches the
+# legacy v0.7 behavior (NA / NaN value rows silently disappear, equivalent
+# to GAMS reading 0 for those keys); "keep" preserves them so they round-
+# trip as GAMS NA / undef; "error" stops with an informative message so the
+# caller can fix the upstream data.
+.apply_na_policy <- function(records, na, sym_name, sym_kind) {
+  na_rows <- is.na(records$value)
+  if (!any(na_rows)) return(records)
+  switch(na,
+    drop  = records[!na_rows, , drop = FALSE],
+    keep  = records,
+    error = stop(sprintf(
+      "%s '%s': %d NA/NaN value row(s) present; pass na = \"drop\" or \"keep\" to write.gdx",
+      sym_kind, sym_name, sum(na_rows)
+    ), call. = FALSE)
+  )
+}
+
 # Common writer used by both write.gdx and write2.gdx.
-.write_container <- function(file, params, vars_l, vars_lo, vars_up, sets, compress) {
+.write_container <- function(file, params, vars_l, vars_lo, vars_up, sets,
+                             compress, na) {
+  na <- match.arg(na, c("drop", "keep", "error"))
   m <- gamstransfer::Container$new()
 
   explicit_set_names <- setdiff(names(sets), "")
@@ -189,10 +209,11 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       p[[v_idx]] <- as.numeric(p[[v_idx]])
       records <- p[, c(idx_idxs, v_idx), drop = FALSE]
       names(records) <- c(make.unique(idx_cols), "value")
-      # Drop zero rows (matches legacy `subset(p, value != 0)`) but keep
-      # NA / NaN values — those map to GAMS NA / undef in the GDX. Use
-      # `is.na | x != 0` rather than `x != 0` directly so NA logicals don't
-      # leak into indexing and produce all-NA rows.
+      # Apply NA policy first (so the user's choice governs whether NAs
+      # survive), then drop zero rows. Use `is.na | x != 0` rather than
+      # `x != 0` directly so NA logicals don't leak into indexing and
+      # produce all-NA rows when na == "keep".
+      records <- .apply_na_policy(records, na, name, "parameter")
       keep <- is.na(records$value) | records$value != 0
       records <- records[keep, , drop = FALSE]
       .check_index_na(records, seq_along(idx_cols), name, "parameter")
@@ -280,6 +301,10 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
 #' @param digits kept for backward compatibility; ignored (gamstransfer
 #'   preserves full numeric precision).
 #' @param compress when \code{TRUE}, write a compressed gdx.
+#' @param na how to handle NA / NaN values in parameter \code{value} columns:
+#'   \code{"drop"} (default, legacy v0.7 behavior: NA rows are silently
+#'   discarded and GAMS reads 0 for those keys), \code{"keep"} (preserve as
+#'   GAMS NA / undef), or \code{"error"} (stop with an informative message).
 #' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
@@ -291,8 +316,10 @@ write.gdx <- function(file, params = list(),
                       vars_l = list(), vars_lo = list(), vars_up = list(),
                       sets = list(),
                       removeLST = TRUE, usetempdir = TRUE,
-                      digits = 16, compress = FALSE) {
-  .write_container(file, params, vars_l, vars_lo, vars_up, sets, compress)
+                      digits = 16, compress = FALSE,
+                      na = c("drop", "keep", "error")) {
+  .write_container(file, params, vars_l, vars_lo, vars_up, sets,
+                   compress, na)
 }
 
 #' Write parameters and sets to a gdx (alias of write.gdx for backward compatibility)
@@ -307,6 +334,8 @@ write.gdx <- function(file, params = list(),
 #' @param params named list of parameter data.frames
 #' @param sets named list of set data.frames
 #' @author Laurent Drouet
-write2.gdx <- function(file, params = list(), sets = list()) {
-  .write_container(file, params, list(), list(), list(), sets, compress = FALSE)
+write2.gdx <- function(file, params = list(), sets = list(),
+                       na = c("drop", "keep", "error")) {
+  .write_container(file, params, list(), list(), list(), sets,
+                   compress = FALSE, na = na)
 }

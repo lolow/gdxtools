@@ -250,18 +250,37 @@ test_that("write.gdx preserves the GAMS description text", {
   file.remove("out_desc.gdx")
 })
 
-test_that("NA / NaN values are preserved (mapped to GAMS NA)", {
+test_that("na = 'drop' (default) silently discards NA/NaN value rows", {
   p <- data.frame(i = c("a", "b", "c", "d"),
                   value = c(1, NA, NaN, 4))
-  expect_silent(write.gdx("out_na_val.gdx", params = list(p = p)))
-  g <- gdx("out_na_val.gdx")
+  expect_silent(write.gdx("out_na_drop.gdx", params = list(p = p)))
+  g <- gdx("out_na_drop.gdx")
+  out <- g["p"][order(g["p"]$i), ]
+  expect_equal(out$i, c("a", "d"))
+  expect_equal(out$value, c(1, 4))
+  file.remove("out_na_drop.gdx")
+})
+
+test_that("na = 'keep' preserves NA / NaN as GAMS NA", {
+  p <- data.frame(i = c("a", "b", "c", "d"),
+                  value = c(1, NA, NaN, 4))
+  expect_silent(write.gdx("out_na_keep.gdx", params = list(p = p), na = "keep"))
+  g <- gdx("out_na_keep.gdx")
   out <- g["p"][order(g["p"]$i), ]
   expect_equal(out$i, c("a", "b", "c", "d"))
   expect_equal(out$value[1], 1)
   expect_equal(out$value[4], 4)
   expect_true(is.na(out$value[2]) || is.nan(out$value[2]))
   expect_true(is.na(out$value[3]) || is.nan(out$value[3]))
-  file.remove("out_na_val.gdx")
+  file.remove("out_na_keep.gdx")
+})
+
+test_that("na = 'error' stops with an informative message", {
+  p <- data.frame(i = c("a", "b"), value = c(1, NA))
+  expect_error(
+    write.gdx("out_na_err.gdx", params = list(p = p), na = "error"),
+    "1 NA/NaN value row"
+  )
 })
 
 test_that("duplicate set rows are collapsed with a warning", {
