@@ -156,10 +156,43 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   )
 }
 
+# Apply the user's duplicate-key policy. "first" matches the legacy v0.7
+# behavior (write2.gdx → wgdx kept the first row when a key repeated);
+# "last" matches the legacy `write.gdx` GAMS-process path (each assignment
+# overwrote the previous one); "error" stops so the caller can dedupe
+# upstream. The warning fires for `first` and `last` so dropped rows are
+# always audible.
+.apply_dup_policy <- function(records, idx_idxs, dup, sym_name, sym_kind) {
+  if (nrow(records) == 0L) return(records)
+  idx_only <- records[, idx_idxs, drop = FALSE]
+  drop_rows <- switch(dup,
+    first = duplicated(idx_only, fromLast = FALSE),
+    last  = duplicated(idx_only, fromLast = TRUE),
+    error = {
+      d <- duplicated(idx_only) | duplicated(idx_only, fromLast = TRUE)
+      if (any(d)) {
+        stop(sprintf(
+          "%s '%s': %d duplicate key row(s) present; pass dup = \"first\" or \"last\" to write.gdx",
+          sym_kind, sym_name, sum(d)
+        ), call. = FALSE)
+      }
+      logical(nrow(records))
+    }
+  )
+  if (any(drop_rows)) {
+    warning(sprintf(
+      "%s '%s': %d duplicate key row(s) collapsed (%s value kept)",
+      sym_kind, sym_name, sum(drop_rows), dup), call. = FALSE)
+    records <- records[!drop_rows, , drop = FALSE]
+  }
+  records
+}
+
 # Common writer used by both write.gdx and write2.gdx.
 .write_container <- function(file, params, vars_l, vars_lo, vars_up, sets,
-                             compress, na) {
-  na <- match.arg(na, c("drop", "keep", "error"))
+                             compress, na, dup) {
+  na  <- match.arg(na,  c("drop", "keep", "error"))
+  dup <- match.arg(dup, c("first", "last", "error"))
   m <- gamstransfer::Container$new()
 
   explicit_set_names <- setdiff(names(sets), "")
@@ -174,12 +207,12 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     for (j in seq_len(dim)) s[[j]] <- as.character(s[[j]])
     .check_index_na(s, seq_len(dim), name, "set")
     if (nrow(s) > 0L) {
-      dup <- duplicated(s, fromLast = TRUE)
-      if (any(dup)) {
+      dup_rows <- duplicated(s, fromLast = TRUE)
+      if (any(dup_rows)) {
         warning(sprintf(
           "set '%s': %d duplicate row(s) collapsed",
-          name, sum(dup)), call. = FALSE)
-        s <- s[!dup, , drop = FALSE]
+          name, sum(dup_rows)), call. = FALSE)
+        s <- s[!dup_rows, , drop = FALSE]
       }
     }
     if (m$hasSymbols(name)) m$removeSymbols(name)
@@ -217,18 +250,8 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
       keep <- is.na(records$value) | records$value != 0
       records <- records[keep, , drop = FALSE]
       .check_index_na(records, seq_along(idx_cols), name, "parameter")
-      # Resolve duplicate keys with last-wins semantics, matching the legacy
-      # GAMS-process behavior (gamstransfer otherwise rejects duplicates).
-      if (nrow(records) > 0L) {
-        idx_only <- records[, seq_along(idx_cols), drop = FALSE]
-        dup <- duplicated(idx_only, fromLast = TRUE)
-        if (any(dup)) {
-          warning(sprintf(
-            "parameter '%s': %d duplicate key row(s) collapsed (last value kept)",
-            name, sum(dup)), call. = FALSE)
-          records <- records[!dup, , drop = FALSE]
-        }
-      }
+      records <- .apply_dup_policy(records, seq_along(idx_cols), dup,
+                                   name, "parameter")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addParameter(name, domains, records = records,
                      description = .text_attr(params[[i]]))
@@ -262,16 +285,7 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     } else {
       .check_index_na(rec, idx_idxs, vn, "variable")
       .check_index_double(rec, idx_idxs, vn, "variable")
-      if (nrow(rec) > 0L) {
-        idx_only <- rec[, idx_idxs, drop = FALSE]
-        dup <- duplicated(idx_only, fromLast = TRUE)
-        if (any(dup)) {
-          warning(sprintf(
-            "variable '%s': %d duplicate key row(s) collapsed (last value kept)",
-            vn, sum(dup)), call. = FALSE)
-          rec <- rec[!dup, , drop = FALSE]
-        }
-      }
+      rec <- .apply_dup_policy(rec, idx_idxs, dup, vn, "variable")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addVariable(vn, "free", domains, records = rec, description = desc)
     }
@@ -305,6 +319,12 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
 #'   \code{"drop"} (default, legacy v0.7 behavior: NA rows are silently
 #'   discarded and GAMS reads 0 for those keys), \code{"keep"} (preserve as
 #'   GAMS NA / undef), or \code{"error"} (stop with an informative message).
+#' @param dup how to collapse duplicate index keys: \code{"first"} (default,
+#'   matches legacy \code{write2.gdx}/\code{wgdx} behavior), \code{"last"}
+#'   (matches the legacy \code{write.gdx} GAMS-process path, where each
+#'   assignment overwrote the previous one), or \code{"error"} (stop so the
+#'   caller can dedupe upstream). When rows are dropped a warning reports
+#'   the count.
 #' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
@@ -317,9 +337,10 @@ write.gdx <- function(file, params = list(),
                       sets = list(),
                       removeLST = TRUE, usetempdir = TRUE,
                       digits = 16, compress = FALSE,
-                      na = c("drop", "keep", "error")) {
+                      na = c("drop", "keep", "error"),
+                      dup = c("first", "last", "error")) {
   .write_container(file, params, vars_l, vars_lo, vars_up, sets,
-                   compress, na)
+                   compress, na, dup)
 }
 
 #' Write parameters and sets to a gdx (alias of write.gdx for backward compatibility)
@@ -335,7 +356,8 @@ write.gdx <- function(file, params = list(),
 #' @param sets named list of set data.frames
 #' @author Laurent Drouet
 write2.gdx <- function(file, params = list(), sets = list(),
-                       na = c("drop", "keep", "error")) {
+                       na = c("drop", "keep", "error"),
+                       dup = c("first", "last", "error")) {
   .write_container(file, params, list(), list(), list(), sets,
-                   compress = FALSE, na = na)
+                   compress = FALSE, na = na, dup = dup)
 }

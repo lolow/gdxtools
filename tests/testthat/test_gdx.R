@@ -295,18 +295,40 @@ test_that("duplicate set rows are collapsed with a warning", {
   file.remove("out_dup_set.gdx")
 })
 
-test_that("duplicate keys are collapsed last-wins with a warning", {
+test_that("dup = 'first' (default) keeps the first row of each key", {
   p <- data.frame(i = c("a", "a", "b", "c", "c", "c"),
                   value = c(1, 2, 3, 4, 5, 6))
   expect_warning(
-    write.gdx("out_dup.gdx", params = list(p = p)),
-    "3 duplicate key row\\(s\\)"
+    write.gdx("out_dup_first.gdx", params = list(p = p)),
+    "3 duplicate key row\\(s\\) collapsed \\(first"
   )
-  g <- gdx("out_dup.gdx")
+  g <- gdx("out_dup_first.gdx")
+  out <- g["p"][order(g["p"]$i), ]
+  expect_equal(out$i, c("a", "b", "c"))
+  expect_equal(out$value, c(1, 3, 4))      # first value per key
+  file.remove("out_dup_first.gdx")
+})
+
+test_that("dup = 'last' keeps the last row of each key", {
+  p <- data.frame(i = c("a", "a", "b", "c", "c", "c"),
+                  value = c(1, 2, 3, 4, 5, 6))
+  expect_warning(
+    write.gdx("out_dup_last.gdx", params = list(p = p), dup = "last"),
+    "3 duplicate key row\\(s\\) collapsed \\(last"
+  )
+  g <- gdx("out_dup_last.gdx")
   out <- g["p"][order(g["p"]$i), ]
   expect_equal(out$i, c("a", "b", "c"))
   expect_equal(out$value, c(2, 3, 6))      # last value per key
-  file.remove("out_dup.gdx")
+  file.remove("out_dup_last.gdx")
+})
+
+test_that("dup = 'error' stops when duplicates are present", {
+  p <- data.frame(i = c("a", "a", "b"), value = c(1, 2, 3))
+  expect_error(
+    write.gdx("out_dup_err.gdx", params = list(p = p), dup = "error"),
+    "2 duplicate key row"
+  )
 })
 
 test_that("zero values are still dropped (legacy semantic)", {
