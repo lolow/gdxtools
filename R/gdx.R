@@ -91,15 +91,30 @@ extract <- function(x, ...) UseMethod("extract", x)
   vapply(d, function(x) if (is.character(x)) x else x$name, character(1))
 }
 
-# Translate "uni" / "uni_<i>" domain column names to V1, V2, ... when the
-# corresponding domain is the universe ("*"). Keeps backward compatibility
-# with the gdxrrw-era column naming.
+# Normalize gamstransfer's record column names to the user-friendly form.
+# Two cases:
+#   - universe domain ("*") → gamstransfer returns `uni` / `uni_<i>`; rename
+#     to V1, V2, ... for backward compatibility with the gdxrrw-era naming
+#     (this is what data.frame() produces from anonymous columns).
+#   - relaxed string domain (e.g. "witch13") → gamstransfer suffixes the
+#     position when the same name appears at multiple positions or to
+#     guarantee uniqueness (`witch13_3` at index 3). Callers expect the
+#     bare set name as the column header (witchtools' region aggregation
+#     looks up `df$witch13`, not `df$witch13_3`).
 .gdx_rename_domains <- function(df, dom_chr) {
   if (length(dom_chr) == 0 || ncol(df) == 0) return(df)
   cols <- names(df)
   for (i in seq_along(dom_chr)) {
-    if (dom_chr[i] == "*" && i <= length(cols)) cols[i] <- paste0("V", i)
+    if (i > length(cols)) next
+    if (dom_chr[i] == "*") {
+      cols[i] <- paste0("V", i)
+    } else {
+      cols[i] <- dom_chr[i]
+    }
   }
+  # If two positions share the same set name (e.g. both index columns are
+  # `n`), make.unique restores the disambiguation.
+  cols[seq_along(dom_chr)] <- make.unique(cols[seq_along(dom_chr)])
   names(df) <- cols
   df
 }
