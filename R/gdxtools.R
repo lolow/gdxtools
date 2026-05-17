@@ -285,6 +285,25 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
     } else {
       .check_index_na(rec, idx_idxs, vn, "variable")
       .check_index_double(rec, idx_idxs, vn, "variable")
+      # Drop default-valued records to match legacy v0.7 (`subset(v, value!=0)`
+      # for level, `subset(v, !is.infinite(value))` for lower / upper). Keep
+      # a row only when at least one provided field differs from its free-var
+      # default (level 0, lower -Inf, upper +Inf). Downstream tools (WITCH's
+      # witchtools) rely on the absence of zero-level records to detect "no
+      # value at this t/n" and back-fill from the first non-default record.
+      if (nrow(rec) > 0L && length(val_cols_present) > 0L) {
+        keep <- logical(nrow(rec))
+        for (vc in val_cols_present) {
+          col <- rec[[vc]]
+          default <- switch(vc,
+            level = 0,
+            lower = -Inf,
+            upper = +Inf
+          )
+          keep <- keep | (!is.na(col) & col != default)
+        }
+        rec <- rec[keep, , drop = FALSE]
+      }
       rec <- .apply_dup_policy(rec, idx_idxs, dup, vn, "variable")
       domains <- .domain_for(m, idx_cols, explicit_set_names)
       m$addVariable(vn, "free", domains, records = rec, description = desc)
