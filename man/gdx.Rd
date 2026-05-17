@@ -4,21 +4,30 @@
 \alias{gdx}
 \title{GDX file}
 \usage{
-gdx(filename, ...)
+gdx(filename, lazy = TRUE, ...)
 }
 \arguments{
 \item{filename}{filename of the gdx file}
+
+\item{lazy}{if \code{TRUE} (default), defer reading symbol records until
+the symbol is actually accessed. If \code{FALSE}, load all records at
+open time.}
 
 \item{...}{extra fields stored on the resulting object}
 }
 \description{
 Constructs a \code{gdx} object backed by a \code{gamstransfer::Container}.
-The container loads the GDX once and is reused on subsequent
-\code{extract}/\code{[} calls.
+By default the file is opened in \strong{lazy mode}: only symbol metadata
+(names, dimensions, domains, descriptions) is read up front. Each symbol's
+records are loaded on first access via \code{[.gdx} / \code{extract()} and
+then cached on the container for subsequent calls. Pass \code{lazy = FALSE}
+to read everything eagerly (legacy 1.0.0 behavior).
 }
 \examples{
  \dontrun{
-   mygdx <- gdx('results.gdx')
+   mygdx <- gdx('results.gdx')              # lazy by default
+   mygdx['Q_EMI']                           # triggers a targeted read
+   bigopen <- gdx('results.gdx', lazy = FALSE)
  }
 }
 \author{

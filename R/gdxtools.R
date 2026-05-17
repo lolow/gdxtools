@@ -30,6 +30,9 @@ NULL
 #' @export
 batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   if (is.null(gdxs)) gdxs <- lapply(files, gdx)
+  # Pre-load all requested items in one read per file so we pay the
+  # gamstransfer C++ call cost once per gdx, not once per (item, gdx).
+  for (g in gdxs) load_records(g, items)
   out <- list()
   for (item in items) {
     rows <- lapply(gdxs, extract, item, addgdx = TRUE, ...)
@@ -383,6 +386,8 @@ write.gdx <- function(file, params = list(),
 #' @param file the output gdx filename
 #' @param params named list of parameter data.frames
 #' @param sets named list of set data.frames
+#' @param na how to handle NA / NaN values; see \code{\link{write.gdx}}.
+#' @param dup how to collapse duplicate index keys; see \code{\link{write.gdx}}.
 #' @author Laurent Drouet
 write2.gdx <- function(file, params = list(), sets = list(),
                        na = c("drop", "keep", "error"),

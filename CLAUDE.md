@@ -38,11 +38,17 @@ Rscript inst/benchmarks/bench_compare.R          # vs. legacy gdxtools
 
 **Three R source files:**
 
-- `R/gdx.R` — the `gdx` S3 class. `gdx(filename)` opens the file via
-  `gamstransfer::Container$new()` and stashes the live container on
-  `.container`. `[.gdx`, `extract.gdx`, `all_items.gdx`, `print.gdx` operate
-  off that cached container, so multiple extracts on one `gdx` object are
-  cheap.
+- `R/gdx.R` — the `gdx` S3 class. `gdx(filename)` defaults to **lazy
+  mode**: it reads only metadata via `Container$read(file, records=FALSE)`
+  and keeps that live container on `.container`. A *second* empty
+  `Container` is kept on `.records_container` and accumulates records as
+  symbols are accessed. The split matters because `read(symbols=…)` on
+  the metadata container is O(symCount) per call; on an empty container
+  it's O(1) (~80× faster on a 4500-symbol gdx). Pass `lazy = FALSE` to
+  load everything up front; in that mode the two container fields point
+  at the same object. `extract.gdx` / `[.gdx` look up records via
+  `.records_container` (after auto-loading the symbol on first access);
+  `load_records(g, symbols)` exposes the bulk pre-load explicitly.
 
 - `R/gdxtools.R` — `batch_extract()`, `write.gdx()`, `write2.gdx()`. Both
   writers funnel through `.write_container()`, which builds a fresh

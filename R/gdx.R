@@ -1,77 +1,174 @@
 #' GDX file
 #'
 #' Constructs a \code{gdx} object backed by a \code{gamstransfer::Container}.
-#' The container loads the GDX once and is reused on subsequent
-#' \code{extract}/\code{[} calls.
+#' By default the file is opened in \strong{lazy mode}: only symbol metadata
+#' (names, dimensions, domains, descriptions) is read up front. Each symbol's
+#' records are loaded on first access via \code{[.gdx} / \code{extract()} and
+#' then cached on the container for subsequent calls. Pass \code{lazy = FALSE}
+#' to read everything eagerly (legacy 1.0.0 behavior).
 #'
 #' @param filename filename of the gdx file
+#' @param lazy if \code{TRUE} (default), defer reading symbol records until
+#'   the symbol is actually accessed. If \code{FALSE}, load all records at
+#'   open time.
 #' @param ... extra fields stored on the resulting object
 #' @author Laurent Drouet
 #' @examples
 #'  \dontrun{
-#'    mygdx <- gdx('results.gdx')
+#'    mygdx <- gdx('results.gdx')              # lazy by default
+#'    mygdx['Q_EMI']                           # triggers a targeted read
+#'    bigopen <- gdx('results.gdx', lazy = FALSE)
 #'  }
 #' @export
-gdx <- function(filename, ...) {
+gdx <- function(filename, lazy = TRUE, ...) {
   if (!file.exists(filename)) {
     warning(paste(filename, "does not exist!"))
-    return(structure(list(filename = filename, ...), class = "gdx"))
+    return(structure(list(filename = filename, .lazy = isTRUE(lazy), ...),
+                     class = "gdx"))
   }
-  # gamstransfer warns once per call when a GDX contains GAMS acronyms
-  # (which it converts to NA). The warning is informational and there is
-  # no remediation for it on the R side, so we filter it out here while
-  # letting any other warning through.
-  m <- withCallingHandlers(
-    gamstransfer::Container$new(filename),
+
+  m <- gamstransfer::Container$new()
+  .gdx_silent_read(m, filename, records = !isTRUE(lazy))
+
+  # Records are fetched into a *separate* container in lazy mode. Reading
+  # symbols into the metadata container is O(symCount) per call because
+  # gamstransfer revalidates the existing symbol table; reading into an
+  # empty container is O(1). On a 4496-symbol WITCH gdx that's ~10 ms vs.
+  # ~800 ms per extract. In eager mode the metadata container already holds
+  # every record, so we alias the two.
+  rec_ct <- if (isTRUE(lazy)) gamstransfer::Container$new() else m
+
+  # Single-pass describe: pull all symbol objects once and classify them.
+  # The legacy per-type approach (5 list* + dim/desc vapply per name) traversed
+  # the symbol table multiple times — costly on gdx files with thousands of
+  # equations.
+  all_syms  <- m$getSymbols()
+  if (length(all_syms) == 0L) {
+    nms  <- character(0); dims <- integer(0)
+    text <- character(0); cls  <- character(0)
+  } else {
+    nms  <- vapply(all_syms, function(s) s$name, character(1))
+    dims <- vapply(all_syms, function(s) as.integer(s$dimension), integer(1))
+    text <- vapply(all_syms, function(s) {
+      d <- s$description; if (is.null(d)) "" else as.character(d)
+    }, character(1))
+    cls  <- vapply(all_syms, function(s) class(s)[1], character(1))
+  }
+  make_df <- function(idx) data.frame(
+    name = nms[idx], text = text[idx], dim = dims[idx],
+    stringsAsFactors = FALSE)
+  variables_df  <- make_df(cls == "Variable")
+  parameters_df <- make_df(cls == "Parameter")
+  sets_df       <- make_df(cls == "Set")
+  equations_df  <- make_df(cls == "Equation")
+  set_names <- sets_df$name
+  par_names <- parameters_df$name
+  var_names <- variables_df$name
+  eq_names  <- equations_df$name
+  ali_names <- m$listAliases()
+  if (is.null(ali_names)) ali_names <- character(0)
+
+  loaded <- new.env(parent = emptyenv())
+  if (!isTRUE(lazy)) {
+    for (n in c(set_names, par_names, var_names, eq_names)) {
+      assign(n, TRUE, envir = loaded, inherits = FALSE)
+    }
+  }
+
+  structure(list(
+    filename           = filename,
+    sets               = sets_df,
+    parameters         = parameters_df,
+    variables          = variables_df,
+    equations          = equations_df,
+    aliases            = if (length(ali_names))
+                           data.frame(name = ali_names, stringsAsFactors = FALSE)
+                         else
+                           data.frame(name = character()),
+    symCount           = length(all_syms) + length(ali_names),
+    .container         = m,
+    .records_container = rec_ct,
+    .lazy              = isTRUE(lazy),
+    .loaded            = loaded,
+    ...
+  ), class = "gdx")
+}
+
+# gamstransfer warns once per call when a GDX contains GAMS acronyms
+# (which it converts to NA). The warning is informational and there is
+# no remediation for it on the R side, so we filter it out while letting
+# any other warning through. Used by every code path that calls
+# Container$read().
+.gdx_silent_read <- function(container, filename, ...) {
+  withCallingHandlers(
+    container$read(filename, ...),
     warning = function(w) {
       if (grepl("acronym", conditionMessage(w), ignore.case = TRUE)) {
         invokeRestart("muffleWarning")
       }
     }
   )
+}
 
-  describe <- function(names_vec) {
-    if (length(names_vec) == 0) {
-      return(data.frame(name = character(), text = character(),
-                        dim = integer(), stringsAsFactors = FALSE))
-    }
-    text <- vapply(names_vec, function(n) {
-      d <- m[n]$description
-      if (is.null(d)) "" else as.character(d)
-    }, character(1))
-    dims <- vapply(names_vec, function(n) as.integer(m[n]$dimension), integer(1))
-    data.frame(name = names_vec, text = text, dim = dims,
-               stringsAsFactors = FALSE)
+# Ensure that records for `symbols` are loaded into the dedicated records
+# container. In eager mode this is a no-op (records already live in the
+# metadata container, which is aliased as the records container).
+.gdx_ensure_records <- function(x, symbols) {
+  if (!isTRUE(x$.lazy)) return(invisible(x))
+  m_meta <- x$.container
+  m_rec  <- x$.records_container
+  if (is.null(m_meta) || is.null(m_rec) || length(symbols) == 0L)
+    return(invisible(x))
+  loaded <- x$.loaded
+  todo <- symbols[!vapply(symbols, function(s)
+    exists(s, envir = loaded, inherits = FALSE), logical(1))]
+  todo <- todo[vapply(todo, function(s) m_meta$hasSymbols(s), logical(1))]
+  if (length(todo) == 0L) return(invisible(x))
+  # gamstransfer rejects re-adding existing symbols; usually rec_ct is empty
+  # for these, but a defensive remove costs nothing.
+  already <- todo[vapply(todo, function(s) m_rec$hasSymbols(s), logical(1))]
+  if (length(already)) m_rec$removeSymbols(already)
+  .gdx_silent_read(m_rec, x$filename, symbols = todo)
+  for (s in todo) assign(s, TRUE, envir = loaded, inherits = FALSE)
+  invisible(x)
+}
+
+#' Eagerly load records for one or more symbols
+#'
+#' Lazy-opened gdx objects defer reading records until first access. When you
+#' know up front which symbols you will use (or you want to amortize the I/O
+#' cost), call \code{load_records()} to read them in a single batched
+#' \code{gamstransfer::Container$read()} call.
+#'
+#' @param x a \code{gdx} object
+#' @param symbols character vector of symbol names; \code{NULL} (default)
+#'   means every symbol in the file.
+#' @return \code{x} invisibly. Records are stored on the underlying container.
+#' @author Laurent Drouet
+#' @examples
+#'  \dontrun{
+#'    g <- gdx("results.gdx")
+#'    load_records(g, c("Q_EMI", "Q", "TEMP"))
+#'    g["Q_EMI"]  # already cached, no I/O
+#'  }
+#' @export
+load_records <- function(x, symbols = NULL) {
+  if (!inherits(x, "gdx")) stop("`x` must be a gdx object")
+  m_meta <- x$.container
+  if (is.null(m_meta)) {
+    warning("gdx not loaded")
+    return(invisible(x))
   }
-
-  set_names <- m$listSets()
-  par_names <- m$listParameters()
-  var_names <- m$listVariables()
-  eq_names  <- m$listEquations()
-  ali_names <- m$listAliases()
-  if (is.null(ali_names)) ali_names <- character(0)
-
-  structure(list(
-    filename   = filename,
-    sets       = describe(set_names),
-    parameters = describe(par_names),
-    variables  = describe(var_names),
-    equations  = describe(eq_names),
-    aliases    = if (length(ali_names))
-                   data.frame(name = ali_names, stringsAsFactors = FALSE)
-                 else
-                   data.frame(name = character()),
-    symCount   = length(m$listSymbols()),
-    .container = m,
-    ...
-  ), class = "gdx")
+  if (is.null(symbols)) symbols <- m_meta$listSymbols()
+  .gdx_ensure_records(x, symbols)
 }
 
 #' @export
 print.gdx <- function(x, ...) {
   n <- if (is.null(x$symCount)) 0L else x$symCount
+  mode <- if (isTRUE(x$.lazy)) " lazy" else ""
   cat("<gdx: ", x$filename, ", ", n, " symbol",
-      if (n != 1L) "s" else "", ">\n", sep = "")
+      if (n != 1L) "s" else "", mode, ">\n", sep = "")
 }
 
 #' Extract data from a gdx
@@ -136,15 +233,17 @@ extract <- function(x, ...) UseMethod("extract", x)
 #'    travel_cost <- extract(mygdx, "travel_cost")
 #'  }
 extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
-  m <- x$.container
-  if (is.null(m)) {
+  m_meta <- x$.container
+  if (is.null(m_meta)) {
     warning("gdx not loaded")
     return(NULL)
   }
-  if (!m$hasSymbols(item)) {
+  if (!m_meta$hasSymbols(item)) {
     warning("item not found")
     return(NULL)
   }
+  .gdx_ensure_records(x, item)
+  m <- if (is.null(x$.records_container)) m_meta else x$.records_container
   sym <- m[item]
   rec <- sym$records
   if (is.null(rec)) rec <- data.frame()
@@ -218,6 +317,18 @@ all_items <- function(x, ...) UseMethod("all_items", x)
 
 #' @export
 all_items.gdx <- function(x, ...) {
+  # Prefer the cached name vectors stored on the gdx object (computed once at
+  # open time) over re-querying the container; the container call iterates the
+  # full symbol table on every invocation.
+  if (!is.null(x$variables) && !is.null(x$parameters) &&
+      !is.null(x$sets) && !is.null(x$equations)) {
+    return(list(
+      variables  = x$variables$name,
+      parameters = x$parameters$name,
+      sets       = x$sets$name,
+      equations  = x$equations$name
+    ))
+  }
   m <- x$.container
   if (is.null(m)) {
     return(list(variables = character(0), parameters = character(0),

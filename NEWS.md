@@ -1,3 +1,42 @@
+# gdxtools 1.1.0
+
+## Lazy loading by default
+
+* `gdx(filename)` now opens the file in lazy mode by default: only symbol
+  metadata (names, dimensions, domains, descriptions) is read up front,
+  and each symbol's records are fetched on first access via `[.gdx` /
+  `extract()`. Pass `lazy = FALSE` to restore the 1.0.0 behavior (all
+  records loaded at open time).
+* On large gdx files (e.g. WITCH results with ~4500 symbols), this halves
+  the `gdx()` open cost: in our benchmark, ~3.7 s lazy vs. ~6.6 s eager.
+  Per-extract cost stays sub-50 ms when records have not been loaded yet,
+  and is essentially free on cache hit.
+* Internally a *second* `gamstransfer::Container` is kept for record
+  reads. Reading symbols into the metadata container is O(symCount) per
+  call because gamstransfer revalidates the existing symbol table;
+  reading into a dedicated empty container is O(1) — ~10 ms vs. ~800 ms
+  per extract on the WITCH gdx.
+* `batch_extract()` now performs a single bulk `read()` per file
+  (pre-loading all requested items) before iterating, which is one
+  C++ round-trip per gdx instead of one per `(item, gdx)` pair.
+* New `load_records(gdx, symbols = NULL)` helper: explicitly batch-load
+  records when you know up front which symbols you'll need. With
+  `symbols = NULL` it loads everything (equivalent to opening eagerly,
+  but deferrable).
+* `gdx()` now does a single-pass describe via `Container$getSymbols()`
+  instead of five separate `list*()` calls followed by per-symbol
+  dimension / description vapply — about 2× faster on a gdx with many
+  equations.
+* `all_items()` now returns the cached name vectors stored on the gdx
+  object rather than re-querying the container.
+
+**Behavior note:** in lazy mode, accessing the underlying container
+directly via `mygdx$.container[name]$records` returns `NULL` until the
+symbol has been extracted at least once. Code that bypasses `extract` /
+`[` and reaches into `.container` for records should either call
+`load_records()` first or open with `lazy = FALSE`. Domain / class /
+dimension queries on `.container` are unaffected.
+
 # gdxtools 1.0.0
 
 ## Major change — gamstransfer backend
