@@ -2,7 +2,7 @@
 % Please edit documentation in R/gdxtools.R
 \name{write.gdx}
 \alias{write.gdx}
-\title{Write a list of parameters in a gdx (old version which uses a temporary gams file)}
+\title{Write a list of parameters / sets / variables to a GDX}
 \usage{
 write.gdx(
   file,
@@ -11,43 +11,61 @@ write.gdx(
   vars_lo = list(),
   vars_up = list(),
   sets = list(),
-  removeLST = T,
-  usetempdir = T,
+  removeLST = TRUE,
+  usetempdir = TRUE,
   digits = 16,
-  compress = F
+  compress = FALSE,
+  na = c("drop", "keep", "error"),
+  dup = c("first", "last", "error")
 )
 }
 \arguments{
-\item{file}{the filename of the gdx to save}
+\item{file}{the output gdx filename}
 
-\item{params}{named list of parameters}
+\item{params}{named list of parameter data.frames}
 
-\item{vars_l}{named list of variable levels}
+\item{vars_l}{named list of variable level data.frames}
 
-\item{vars_lo}{named list of variable lower bounds}
+\item{vars_lo}{named list of variable lower-bound data.frames}
 
-\item{vars_up}{named list of variable upper bounds}
+\item{vars_up}{named list of variable upper-bound data.frames}
 
-\item{sets}{named list of sets}
+\item{sets}{named list of set data.frames}
 
-\item{removeLST}{remove temporary lst file}
+\item{removeLST}{kept for backward compatibility; ignored.}
 
-\item{usetempdir}{uses system temp dir for the temporary files, otherwise use local file "tmp.gms"}
+\item{usetempdir}{kept for backward compatibility; ignored.}
 
-\item{compress}{compress GDX}
+\item{digits}{kept for backward compatibility; ignored (gamstransfer
+preserves full numeric precision).}
 
-\item{digit}{number of digits to use}
+\item{compress}{when \code{TRUE}, write a compressed gdx.}
+
+\item{na}{how to handle NA / NaN values in parameter \code{value} columns:
+\code{"drop"} (default, legacy v0.7 behavior: NA rows are silently
+discarded and GAMS reads 0 for those keys), \code{"keep"} (preserve as
+GAMS NA / undef), or \code{"error"} (stop with an informative message).}
+
+\item{dup}{how to collapse duplicate index keys: \code{"first"} (default,
+matches legacy \code{write2.gdx}/\code{wgdx} behavior), \code{"last"}
+(matches the legacy \code{write.gdx} GAMS-process path, where each
+assignment overwrote the previous one), or \code{"error"} (stop so the
+caller can dedupe upstream). When rows are dropped a warning reports
+the count.}
 }
 \description{
-Write a list of parameters in a gdx (old version which uses a temporary gams file)
+Builds a \code{gamstransfer::Container} from the supplied data and writes it
+to \code{file}. Variables can be given as separate level / lower / upper
+data.frames (keyed by the same variable name across the three lists);
+missing entries fall back to the gamstransfer defaults (level 0,
+lower -Inf, upper +Inf for free variables).
 }
 \examples{
  \dontrun{
-    param1 = data.frame(x=c('1','2'),value=1:10)
-    param2 = data.frame(a=c('london','paris','tahiti'),value=c(50,0.2,1e-2))
-    write.gdx("test.gdx",list(param1=param1,param2=param2))
+   param1 <- data.frame(x = c('1','2'), value = 1:2)
+   param2 <- data.frame(a = c('london','paris'), value = c(50, 0.2))
+   write.gdx("test.gdx", list(param1 = param1, param2 = param2))
  }
-
 }
 \author{
 Laurent Drouet

@@ -6,6 +6,11 @@
 \usage{
 extract(x, ...)
 }
+\arguments{
+\item{x}{the gdx object}
+
+\item{...}{arguments passed to \code{extract.gdx}}
+}
 \description{
 Extract data from a gdx
 }

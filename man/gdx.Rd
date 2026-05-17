@@ -8,15 +8,18 @@ gdx(filename, ...)
 }
 \arguments{
 \item{filename}{filename of the gdx file}
+
+\item{...}{extra fields stored on the resulting object}
 }
 \description{
-GDX file
+Constructs a \code{gdx} object backed by a \code{gamstransfer::Container}.
+The container loads the GDX once and is reused on subsequent
+\code{extract}/\code{[} calls.
 }
 \examples{
-
-  \dontrun{
-    mygdx <- gdx('results.gdx')
-  }
+ \dontrun{
+   mygdx <- gdx('results.gdx')
+ }
 }
 \author{
 Laurent Drouet
