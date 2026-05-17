@@ -14,7 +14,9 @@ write.gdx(
   removeLST = TRUE,
   usetempdir = TRUE,
   digits = 16,
-  compress = FALSE
+  compress = FALSE,
+  na = c("drop", "keep", "error"),
+  dup = c("first", "last", "error")
 )
 }
 \arguments{
@@ -38,6 +40,18 @@ write.gdx(
 preserves full numeric precision).}
 
 \item{compress}{when \code{TRUE}, write a compressed gdx.}
+
+\item{na}{how to handle NA / NaN values in parameter \code{value} columns:
+\code{"drop"} (default, legacy v0.7 behavior: NA rows are silently
+discarded and GAMS reads 0 for those keys), \code{"keep"} (preserve as
+GAMS NA / undef), or \code{"error"} (stop with an informative message).}
+
+\item{dup}{how to collapse duplicate index keys: \code{"first"} (default,
+matches legacy \code{write2.gdx}/\code{wgdx} behavior), \code{"last"}
+(matches the legacy \code{write.gdx} GAMS-process path, where each
+assignment overwrote the previous one), or \code{"error"} (stop so the
+caller can dedupe upstream). When rows are dropped a warning reports
+the count.}
 }
 \description{
 Builds a \code{gamstransfer::Container} from the supplied data and writes it

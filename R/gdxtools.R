@@ -264,6 +264,17 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   vnames <- unique(c(names(vars_l), names(vars_lo), names(vars_up)))
   vnames <- vnames[!is.na(vnames) & vnames != ""]
   for (vn in vnames) {
+    # Run the stray-column check on the user-supplied data.frames before
+    # .merge_var_records coerces every index column to character (which
+    # would mask the double-precision flag).
+    for (src in list(vars_l[[vn]], vars_lo[[vn]], vars_up[[vn]])) {
+      if (is.null(src)) next
+      src <- as.data.frame(src)
+      if (ncol(src) == 0) next
+      v_idx_src <- if ("value" %in% names(src)) match("value", names(src)) else ncol(src)
+      .check_index_double(src, setdiff(seq_len(ncol(src)), v_idx_src),
+                          vn, "variable")
+    }
     rec <- .merge_var_records(vars_l[[vn]], vars_lo[[vn]], vars_up[[vn]])
     if (is.null(rec)) next
     description_ref <- vars_l[[vn]]
@@ -284,7 +295,6 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
                     description = desc)
     } else {
       .check_index_na(rec, idx_idxs, vn, "variable")
-      .check_index_double(rec, idx_idxs, vn, "variable")
       # Drop default-valued records to match legacy v0.7 (`subset(v, value!=0)`
       # for level, `subset(v, !is.infinite(value))` for lower / upper). Keep
       # a row only when at least one provided field differs from its free-var

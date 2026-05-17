@@ -4,7 +4,13 @@
 \alias{write2.gdx}
 \title{Write parameters and sets to a gdx (alias of write.gdx for backward compatibility)}
 \usage{
-write2.gdx(file, params = list(), sets = list())
+write2.gdx(
+  file,
+  params = list(),
+  sets = list(),
+  na = c("drop", "keep", "error"),
+  dup = c("first", "last", "error")
+)
 }
 \arguments{
 \item{file}{the output gdx filename}
@@ -12,6 +18,10 @@ write2.gdx(file, params = list(), sets = list())
 \item{params}{named list of parameter data.frames}
 
 \item{sets}{named list of set data.frames}
+
+\item{na}{how to handle NA / NaN values; see \code{\link{write.gdx}}.}
+
+\item{dup}{how to collapse duplicate index keys; see \code{\link{write.gdx}}.}
 }
 \description{
 Historically this was a faster path that bypassed the GAMS process used by
