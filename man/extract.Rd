@@ -11,6 +11,10 @@ extract(x, ...)
 
 \item{...}{arguments passed to \code{extract.gdx}}
 }
+\value{
+A \code{data.frame}; see \code{\link{extract.gdx}} for the column
+  layout and attributes.
+}
 \description{
 Extract data from a gdx
 }

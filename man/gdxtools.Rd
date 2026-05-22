@@ -4,31 +4,28 @@
 \name{gdxtools}
 \alias{gdxtools-package}
 \alias{gdxtools}
-\title{gdxtools}
+\title{gdxtools: manipulate 'GDX' files}
 \description{
-Read and write GDX files (GAMS database exchange) using the GAMS-maintained
-\code{gamstransfer} package as the underlying backend. Symbols are returned
-as plain data.frames with domain columns plus a \code{value} column,
-preserving the API of earlier (gdxrrw-backed) versions.
+Read and write 'GDX' files ('GAMS' data exchange) using the
+'GAMS'-maintained \code{gamstransfer} package as the underlying backend.
+Symbols are returned as plain data frames with domain columns plus a
+\code{value} column, preserving the API of earlier (gdxrrw-backed) versions.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/lolow/gdxtools}
+  \item Report bugs at \url{https://github.com/lolow/gdxtools/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Laurent Drouet \email{ldrouet@gmail.com}
+\strong{Maintainer}: Laurent Drouet \email{ldrouet@pm.me}
 
 Authors:
 \itemize{
-  \item Laurent Drouet \email{ldrouet@gmail.com}
-}
-
-Other contributors:
-\itemize{
-  \item Steve Dirkse [copyright holder]
+  \item Laurent Drouet \email{ldrouet@pm.me}
 }
 
 }
+\keyword{internal}

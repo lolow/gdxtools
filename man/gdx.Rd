@@ -15,6 +15,12 @@ open time.}
 
 \item{...}{extra fields stored on the resulting object}
 }
+\value{
+An object of class \code{gdx}: an S3 list holding the live
+  \code{gamstransfer::Container}(s) and per-type symbol metadata
+  (\code{variables}, \code{parameters}, \code{sets}, \code{equations}
+  data.frames with \code{name}, \code{text} and \code{dim} columns).
+}
 \description{
 Constructs a \code{gdx} object backed by a \code{gamstransfer::Container}.
 By default the file is opened in \strong{lazy mode}: only symbol metadata
@@ -24,11 +30,12 @@ then cached on the container for subsequent calls. Pass \code{lazy = FALSE}
 to read everything eagerly (legacy 1.0.0 behavior).
 }
 \examples{
- \dontrun{
-   mygdx <- gdx('results.gdx')              # lazy by default
-   mygdx['Q_EMI']                           # triggers a targeted read
-   bigopen <- gdx('results.gdx', lazy = FALSE)
- }
+ f <- tempfile(fileext = ".gdx")
+ write.gdx(f, list(demand = data.frame(city = c("paris", "lyon"),
+                                        value = c(50, 20))))
+ mygdx <- gdx(f)                  # lazy by default
+ mygdx["demand"]                  # triggers a targeted read
+ eager <- gdx(f, lazy = FALSE)
 }
 \author{
 Laurent Drouet

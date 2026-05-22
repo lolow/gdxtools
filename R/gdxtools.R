@@ -1,13 +1,13 @@
-#' gdxtools
+#' gdxtools: manipulate 'GDX' files
+#'
+#' Read and write 'GDX' files ('GAMS' data exchange) using the
+#' 'GAMS'-maintained \code{gamstransfer} package as the underlying backend.
+#' Symbols are returned as plain data frames with domain columns plus a
+#' \code{value} column, preserving the API of earlier (gdxrrw-backed) versions.
 #'
 #' @name gdxtools
-#' @docType package
-#' @description
-#' Read and write GDX files (GAMS database exchange) using the GAMS-maintained
-#' \code{gamstransfer} package as the underlying backend. Symbols are returned
-#' as plain data.frames with domain columns plus a \code{value} column,
-#' preserving the API of earlier (gdxrrw-backed) versions.
-NULL
+#' @keywords internal
+"_PACKAGE"
 
 .onAttach <- function(libname, pkgname) {
   if (!interactive()) return()
@@ -21,12 +21,16 @@ NULL
 #' @param files list of files; if \code{NULL}, \code{gdxs} must be supplied
 #' @param gdxs list of \code{gdx} objects; if \code{NULL}, \code{files} must be supplied
 #' @param ... passed to \code{extract.gdx}
+#' @return A named \code{list} with one \code{data.frame} per requested item,
+#'   each the row-bind of that item extracted from every file with a
+#'   \code{gdx} column identifying the source file.
 #' @author Laurent Drouet
 #' @examples
-#'  \dontrun{
-#'    myfiles  <- c("test1.gdx", "test2.gdx")
-#'    allparam <- batch_extract("myparam", files = myfiles)
-#'  }
+#'  f1 <- tempfile(fileext = ".gdx")
+#'  f2 <- tempfile(fileext = ".gdx")
+#'  write.gdx(f1, list(myparam = data.frame(i = c("a", "b"), value = 1:2)))
+#'  write.gdx(f2, list(myparam = data.frame(i = c("a", "b"), value = 3:4)))
+#'  allparam <- batch_extract("myparam", files = c(f1, f2))
 #' @export
 batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
   if (is.null(gdxs)) gdxs <- lapply(files, gdx)
@@ -357,13 +361,14 @@ batch_extract <- function(items, files = NULL, gdxs = NULL, ...) {
 #'   assignment overwrote the previous one), or \code{"error"} (stop so the
 #'   caller can dedupe upstream). When rows are dropped a warning reports
 #'   the count.
+#' @return Invisibly returns \code{0}; called for the side effect of writing
+#'   the gdx file at \code{file}.
 #' @author Laurent Drouet
 #' @examples
-#'  \dontrun{
-#'    param1 <- data.frame(x = c('1','2'), value = 1:2)
-#'    param2 <- data.frame(a = c('london','paris'), value = c(50, 0.2))
-#'    write.gdx("test.gdx", list(param1 = param1, param2 = param2))
-#'  }
+#'  param1 <- data.frame(x = c('1', '2'), value = 1:2)
+#'  param2 <- data.frame(a = c('london', 'paris'), value = c(50, 0.2))
+#'  write.gdx(tempfile(fileext = ".gdx"),
+#'            list(param1 = param1, param2 = param2))
 write.gdx <- function(file, params = list(),
                       vars_l = list(), vars_lo = list(), vars_up = list(),
                       sets = list(),
@@ -388,6 +393,8 @@ write.gdx <- function(file, params = list(),
 #' @param sets named list of set data.frames
 #' @param na how to handle NA / NaN values; see \code{\link{write.gdx}}.
 #' @param dup how to collapse duplicate index keys; see \code{\link{write.gdx}}.
+#' @return Invisibly returns \code{0}; called for the side effect of writing
+#'   the gdx file at \code{file}.
 #' @author Laurent Drouet
 write2.gdx <- function(file, params = list(), sets = list(),
                        na = c("drop", "keep", "error"),

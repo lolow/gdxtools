@@ -12,13 +12,18 @@
 #'   the symbol is actually accessed. If \code{FALSE}, load all records at
 #'   open time.
 #' @param ... extra fields stored on the resulting object
+#' @return An object of class \code{gdx}: an S3 list holding the live
+#'   \code{gamstransfer::Container}(s) and per-type symbol metadata
+#'   (\code{variables}, \code{parameters}, \code{sets}, \code{equations}
+#'   data.frames with \code{name}, \code{text} and \code{dim} columns).
 #' @author Laurent Drouet
 #' @examples
-#'  \dontrun{
-#'    mygdx <- gdx('results.gdx')              # lazy by default
-#'    mygdx['Q_EMI']                           # triggers a targeted read
-#'    bigopen <- gdx('results.gdx', lazy = FALSE)
-#'  }
+#'  f <- tempfile(fileext = ".gdx")
+#'  write.gdx(f, list(demand = data.frame(city = c("paris", "lyon"),
+#'                                         value = c(50, 20))))
+#'  mygdx <- gdx(f)                  # lazy by default
+#'  mygdx["demand"]                  # triggers a targeted read
+#'  eager <- gdx(f, lazy = FALSE)
 #' @export
 gdx <- function(filename, lazy = TRUE, ...) {
   if (!file.exists(filename)) {
@@ -146,11 +151,12 @@ gdx <- function(filename, lazy = TRUE, ...) {
 #' @return \code{x} invisibly. Records are stored on the underlying container.
 #' @author Laurent Drouet
 #' @examples
-#'  \dontrun{
-#'    g <- gdx("results.gdx")
-#'    load_records(g, c("Q_EMI", "Q", "TEMP"))
-#'    g["Q_EMI"]  # already cached, no I/O
-#'  }
+#'  f <- tempfile(fileext = ".gdx")
+#'  write.gdx(f, list(a = data.frame(i = c("x", "y"), value = 1:2),
+#'                    b = data.frame(i = c("x", "y"), value = 3:4)))
+#'  g <- gdx(f)
+#'  load_records(g, c("a", "b"))
+#'  g["a"]  # already cached, no I/O
 #' @export
 load_records <- function(x, symbols = NULL) {
   if (!inherits(x, "gdx")) stop("`x` must be a gdx object")
@@ -175,6 +181,8 @@ print.gdx <- function(x, ...) {
 #'
 #' @param x the gdx object
 #' @param ... arguments passed to \code{extract.gdx}
+#' @return A \code{data.frame}; see \code{\link{extract.gdx}} for the column
+#'   layout and attributes.
 #' @export
 extract <- function(x, ...) UseMethod("extract", x)
 
@@ -226,12 +234,18 @@ extract <- function(x, ...) UseMethod("extract", x)
 #'   'lo', 'up' (level, marginal, lower, upper). Defaults to level.
 #' @param addgdx if \code{TRUE}, append a \code{gdx} column with the filename.
 #' @param ... ignored; for backward compatibility.
+#' @return A \code{data.frame} with one character column per domain index plus
+#'   a numeric \code{value} column (parameters, variables and equations); sets
+#'   have no \code{value} column. A \code{gams} attribute carries the symbol's
+#'   description text, and \code{addgdx = TRUE} adds a \code{gdx} column with
+#'   the source filename.
 #' @examples
-#'  \dontrun{
-#'    mygdx <- gdx('results.gdx')
-#'    travel_cost <- mygdx["travel_cost"]
-#'    travel_cost <- extract(mygdx, "travel_cost")
-#'  }
+#'  f <- tempfile(fileext = ".gdx")
+#'  write.gdx(f, list(travel_cost = data.frame(city = c("paris", "lyon"),
+#'                                              value = c(12, 7))))
+#'  mygdx <- gdx(f)
+#'  travel_cost <- mygdx["travel_cost"]
+#'  travel_cost <- extract(mygdx, "travel_cost")
 extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
   m_meta <- x$.container
   if (is.null(m_meta)) {
@@ -309,6 +323,8 @@ extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
 #'
 #' @param x the gdx object
 #' @param ... ignored
+#' @return A named \code{list} with four character vectors of symbol names:
+#'   \code{variables}, \code{parameters}, \code{sets} and \code{equations}.
 #' @author Laurent Drouet
 #' @export
 all_items <- function(x, ...) UseMethod("all_items", x)

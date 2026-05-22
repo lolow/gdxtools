@@ -11,6 +11,10 @@ all_items(x, ...)
 
 \item{...}{ignored}
 }
+\value{
+A named \code{list} with four character vectors of symbol names:
+  \code{variables}, \code{parameters}, \code{sets} and \code{equations}.
+}
 \description{
 Return the list of all items
 }

@@ -15,14 +15,20 @@ batch_extract(items, files = NULL, gdxs = NULL, ...)
 
 \item{...}{passed to \code{extract.gdx}}
 }
+\value{
+A named \code{list} with one \code{data.frame} per requested item,
+  each the row-bind of that item extracted from every file with a
+  \code{gdx} column identifying the source file.
+}
 \description{
 Extract a list of items from many GDX
 }
 \examples{
- \dontrun{
-   myfiles  <- c("test1.gdx", "test2.gdx")
-   allparam <- batch_extract("myparam", files = myfiles)
- }
+ f1 <- tempfile(fileext = ".gdx")
+ f2 <- tempfile(fileext = ".gdx")
+ write.gdx(f1, list(myparam = data.frame(i = c("a", "b"), value = 1:2)))
+ write.gdx(f2, list(myparam = data.frame(i = c("a", "b"), value = 3:4)))
+ allparam <- batch_extract("myparam", files = c(f1, f2))
 }
 \author{
 Laurent Drouet

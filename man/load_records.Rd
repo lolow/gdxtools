@@ -22,11 +22,12 @@ cost), call \code{load_records()} to read them in a single batched
 \code{gamstransfer::Container$read()} call.
 }
 \examples{
- \dontrun{
-   g <- gdx("results.gdx")
-   load_records(g, c("Q_EMI", "Q", "TEMP"))
-   g["Q_EMI"]  # already cached, no I/O
- }
+ f <- tempfile(fileext = ".gdx")
+ write.gdx(f, list(a = data.frame(i = c("x", "y"), value = 1:2),
+                   b = data.frame(i = c("x", "y"), value = 3:4)))
+ g <- gdx(f)
+ load_records(g, c("a", "b"))
+ g["a"]  # already cached, no I/O
 }
 \author{
 Laurent Drouet
