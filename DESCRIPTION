@@ -1,8 +1,8 @@
 Package: gdxtools
 Title: Manipulate 'GDX' Files
 Type: Package
-Version: 1.1.0
-Date: 2026-05-18
+Version: 1.1.1
+Date: 2026-05-22
 SystemRequirements: GAMS (>= 24.2.1) is only required if you call gams()
 Authors@R: person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@pm.me")
 Description: Read and write 'GDX' files ('GAMS' data exchange) and convert

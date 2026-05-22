@@ -1,3 +1,15 @@
+# gdxtools 1.1.1
+
+* CRAN resubmission. Addresses the initial review: quoted software names
+  ('GDX', 'GAMS', 'gamstransfer') in the title and description, added
+  `\value` documentation to every exported function, and replaced the
+  `\dontrun{}` examples with self-contained, executable ones.
+* `extract.gdx` now uses `inherits()` for symbol-type checks and reports
+  the offending class in its unknown-symbol-type error (previously
+  referenced an undefined variable).
+* Updated maintainer email and removed the obsolete gdxrrw copyright
+  holder now that no gdxrrw code remains.
+
 # gdxtools 1.1.0
 
 ## Lazy loading by default
