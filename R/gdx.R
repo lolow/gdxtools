@@ -303,7 +303,7 @@ extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
       df <- rec[, dom_cols, drop = FALSE]
     }
   } else {
-    stop("Unknown symbol type: ", paste(cls, collapse = "/"))
+    stop("Unknown symbol type: ", paste(class(sym), collapse = "/"))
   }
 
   for (j in seq_along(df)) if (is.factor(df[[j]])) df[[j]] <- as.character(df[[j]])
