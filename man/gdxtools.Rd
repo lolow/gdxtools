@@ -20,16 +20,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Laurent Drouet \email{ldrouet@gmail.com}
+\strong{Maintainer}: Laurent Drouet \email{ldrouet@pm.me}
 
 Authors:
 \itemize{
-  \item Laurent Drouet \email{ldrouet@gmail.com}
-}
-
-Other contributors:
-\itemize{
-  \item Steve Dirkse [copyright holder]
+  \item Laurent Drouet \email{ldrouet@pm.me}
 }
 
 }

@@ -4,8 +4,7 @@ Type: Package
 Version: 1.1.0
 Date: 2026-05-18
 SystemRequirements: GAMS (>= 24.2.1) is only required if you call gams()
-Authors@R: c(person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@gmail.com"),
-           person("Steve","Dirkse", role=c("cph")))
+Authors@R: person("Laurent", "Drouet", role=c("aut","cre"), email="ldrouet@pm.me")
 Description: Read and write 'GDX' files ('GAMS' data exchange) and convert
     parameters, sets and variables to data frames. Backed by the
     'GAMS'-maintained 'gamstransfer' package; no compiled code is shipped.
