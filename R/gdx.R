@@ -248,12 +248,10 @@ extract.gdx <- function(x, item, field = "l", addgdx = FALSE, ...) {
   rec <- sym$records
   if (is.null(rec)) rec <- data.frame()
 
-  cls <- class(sym)
-  is_var <- "Variable" %in% cls
-  is_eq  <- "Equation" %in% cls
-  is_par <- "Parameter" %in% cls
-  is_set <- ("Set" %in% cls) || (".BaseAlias" %in% cls) ||
-            ("Alias" %in% cls) || ("UniverseAlias" %in% cls)
+  is_var <- inherits(sym, "Variable")
+  is_eq  <- inherits(sym, "Equation")
+  is_par <- inherits(sym, "Parameter")
+  is_set <- inherits(sym, c("Set", ".BaseAlias", "Alias", "UniverseAlias"))
 
   field_map <- c(l = "level", m = "marginal", lo = "lower", up = "upper")
   dim <- as.integer(sym$dimension)
