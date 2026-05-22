@@ -18,15 +18,23 @@
 
 \item{...}{ignored; for backward compatibility.}
 }
+\value{
+A \code{data.frame} with one character column per domain index plus
+  a numeric \code{value} column (parameters, variables and equations); sets
+  have no \code{value} column. A \code{gams} attribute carries the symbol's
+  description text, and \code{addgdx = TRUE} adds a \code{gdx} column with
+  the source filename.
+}
 \description{
 Extract parameter or variable data from the gdx file
 }
 \examples{
- \dontrun{
-   mygdx <- gdx('results.gdx')
-   travel_cost <- mygdx["travel_cost"]
-   travel_cost <- extract(mygdx, "travel_cost")
- }
+ f <- tempfile(fileext = ".gdx")
+ write.gdx(f, list(travel_cost = data.frame(city = c("paris", "lyon"),
+                                             value = c(12, 7))))
+ mygdx <- gdx(f)
+ travel_cost <- mygdx["travel_cost"]
+ travel_cost <- extract(mygdx, "travel_cost")
 }
 \author{
 Laurent Drouet

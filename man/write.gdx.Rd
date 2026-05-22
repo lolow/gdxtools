@@ -53,6 +53,10 @@ assignment overwrote the previous one), or \code{"error"} (stop so the
 caller can dedupe upstream). When rows are dropped a warning reports
 the count.}
 }
+\value{
+Invisibly returns \code{0}; called for the side effect of writing
+  the gdx file at \code{file}.
+}
 \description{
 Builds a \code{gamstransfer::Container} from the supplied data and writes it
 to \code{file}. Variables can be given as separate level / lower / upper
@@ -61,11 +65,10 @@ missing entries fall back to the gamstransfer defaults (level 0,
 lower -Inf, upper +Inf for free variables).
 }
 \examples{
- \dontrun{
-   param1 <- data.frame(x = c('1','2'), value = 1:2)
-   param2 <- data.frame(a = c('london','paris'), value = c(50, 0.2))
-   write.gdx("test.gdx", list(param1 = param1, param2 = param2))
- }
+ param1 <- data.frame(x = c('1', '2'), value = 1:2)
+ param2 <- data.frame(a = c('london', 'paris'), value = c(50, 0.2))
+ write.gdx(tempfile(fileext = ".gdx"),
+           list(param1 = param1, param2 = param2))
 }
 \author{
 Laurent Drouet

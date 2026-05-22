@@ -23,6 +23,10 @@ write2.gdx(
 
 \item{dup}{how to collapse duplicate index keys; see \code{\link{write.gdx}}.}
 }
+\value{
+Invisibly returns \code{0}; called for the side effect of writing
+  the gdx file at \code{file}.
+}
 \description{
 Historically this was a faster path that bypassed the GAMS process used by
 the legacy \code{write.gdx}. With the gamstransfer backend both functions
