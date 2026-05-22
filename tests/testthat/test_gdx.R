@@ -423,5 +423,24 @@ test_that("write.gdx accepts +Inf upper bounds", {
   file.remove("out_inf.gdx")
 })
 
+test_that("extract.gdx errors on an unrecognized symbol type", {
+  # Every real gamstransfer symbol is a Variable / Equation / Parameter /
+  # Set / Alias, so the defensive `else` branch is unreachable through a
+  # genuine gdx. Stub a container that hands back a symbol of an unknown
+  # class to exercise it.
+  fake_sym <- structure(list(records = NULL, dimension = 0L),
+                        class = "WeirdSymbol")
+  fake_container <- structure(list(hasSymbols = function(item) TRUE),
+                              class = "fake_container")
+  assign("[.fake_container", function(x, i, ...) fake_sym, envir = globalenv())
+  on.exit(rm("[.fake_container", envir = globalenv()), add = TRUE)
+
+  g <- structure(
+    list(filename = "stub.gdx", .container = fake_container,
+         .records_container = NULL, .lazy = FALSE),
+    class = "gdx")
+  expect_error(extract(g, "foo"), "Unknown symbol type: WeirdSymbol")
+})
+
 # Cleanup
 for (f in c("out_param.gdx", "out_var.gdx")) if (file.exists(f)) file.remove(f)
