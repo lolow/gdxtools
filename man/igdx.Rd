@@ -23,3 +23,8 @@ not need this. \code{igdx} now simply discovers \code{gams} on the PATH
 (or uses the directory the user supplies) and returns it; calling it has
 no side effect on gdx I/O.
 }
+\details{
+Deprecated since 1.2.0: it is not needed by \code{gdx()} or
+\code{write.gdx()} and will be removed in a future release. Use
+\code{Sys.which("gams")} to locate GAMS.
+}
