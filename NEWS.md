@@ -1,3 +1,12 @@
+# gdxtools 1.2.0
+
+* `igdx()` is deprecated: gdx I/O has not needed a GAMS system directory
+  since 1.0.0. It still returns the discovered directory, with a
+  deprecation warning.
+* New tests reading a gdx written directly through the GDX C API with
+  relaxed domains and special values (NA, +/-Inf), as produced by the
+  Julia make_data scripts of WITCH.
+
 # gdxtools 1.1.1
 
 * CRAN resubmission. Addresses the initial review: quoted software names
