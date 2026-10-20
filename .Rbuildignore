@@ -6,3 +6,4 @@
 ^gdxtools_.*\.tar\.gz$
 ^cran-comments\.md$
 LICENSE
+^CRAN-SUBMISSION$
