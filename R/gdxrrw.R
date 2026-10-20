@@ -6,12 +6,18 @@
 #' (or uses the directory the user supplies) and returns it; calling it has
 #' no side effect on gdx I/O.
 #'
+#' Deprecated since 1.2.0: it is not needed by \code{gdx()} or
+#' \code{write.gdx()} and will be removed in a future release. Use
+#' \code{Sys.which("gams")} to locate GAMS.
+#'
 #' @param gamsSysDir path to the GAMS system directory (optional)
 #' @param silent if \code{TRUE}, do not print the discovered path
 #' @param returnStr if \code{TRUE}, return the discovered path as a string
 #' @return the discovered GAMS system directory, or \code{""} if none found
 #' @export
 igdx <- function(gamsSysDir = NULL, silent = FALSE, returnStr = FALSE) {
+  .Deprecated(msg = paste("igdx() is deprecated and not needed for gdx I/O;",
+                          "use Sys.which(\"gams\") to locate GAMS."))
   if (is.null(gamsSysDir) || identical(gamsSysDir, "")) {
     gams_path <- Sys.which(if (.Platform$OS.type == "windows") "gams.exe" else "gams")
     sysdir <- if (nzchar(gams_path)) dirname(gams_path) else ""
