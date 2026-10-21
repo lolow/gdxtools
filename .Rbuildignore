@@ -7,3 +7,6 @@
 ^cran-comments\.md$
 LICENSE
 ^CRAN-SUBMISSION$
+^\.github$
+^\.Rhistory$
+^\.\.Rcheck$
